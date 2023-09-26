@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "tORxTddgE3mLxvK3mGLSgb+5OFNUVcVoUtqj5OG8dwI=",
+  "Source": "skipper-backend",
+  "BasePath": "_content/skipper-backend",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}

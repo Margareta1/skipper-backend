@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\skipper-backend.props" />
+</Project>
