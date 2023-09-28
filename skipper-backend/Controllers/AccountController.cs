@@ -58,8 +58,7 @@ namespace skipper_backend.Controllers
             return Ok(new AuthenticatedResponse
             {
                 AccessToken = accessToken,
-                RefreshToken = refreshToken,
-                Roles = roles
+                RefreshToken = refreshToken
             });
         }
 
@@ -91,8 +90,7 @@ namespace skipper_backend.Controllers
             return Ok(new AuthenticatedResponse
             {
                 AccessToken = accessToken,
-                RefreshToken = refreshToken,
-                Roles = roles
+                RefreshToken = refreshToken
             });
 
         }
@@ -123,8 +121,7 @@ namespace skipper_backend.Controllers
             return Ok(new AuthenticatedResponse()
             {
                 AccessToken = newAccessToken,
-                RefreshToken = newRefreshToken,
-                Roles = roles
+                RefreshToken = newRefreshToken
             });
         }
 
