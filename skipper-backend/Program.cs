@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using skipper_backend.Data;
 using skipper_backend.Identity;
+using skipper_backend.Middleware;
 using skipper_backend.Store;
 using System.Text;
 
@@ -13,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+//builder.Services.AddSwaggerGen();
 builder.Services.AddSwaggerGen(c =>
 {
     var jwtSecurityScheme = new OpenApiSecurityScheme
@@ -68,6 +70,8 @@ builder.Services.AddScoped<TokenService>();
 
 var app = builder.Build();
 
+app.UseMiddleware<ExceptionMiddleware>();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -80,8 +84,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors(opt =>
 {
-    opt.AllowAnyHeader().AllowAnyMethod().AllowCredentials().WithOrigins("http://localhost:3000");
+    opt.AllowAnyHeader().AllowAnyMethod().WithOrigins("http://localhost:3000");
 });
+
 
 app.UseAuthentication();
 app.UseAuthorization();

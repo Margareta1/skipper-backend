@@ -9,6 +9,8 @@ namespace skipper_backend.Identity
         public double? FixedSalaryGross { get; set; }
         public string? PictureUrl { get; set; }
         public List<CompanyProject>?  Projects { get; set; }
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiryTime { get; set; }
 
     }
 }

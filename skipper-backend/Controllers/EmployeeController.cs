@@ -16,19 +16,5 @@ namespace skipper_backend.Controllers
             manager = userManager;
         }
 
-
-
-        [HttpPost("login")]
-        public async Task<ActionResult<JsonResult>> Login(string username, string password)
-        {
-            var user = await _userManager.FindByNameAsync(username);
-            if (user == null || !await _userManager.CheckPasswordAsync(user, password))
-                return Unauthorized();
-
-            var roles = _userManager.GetRolesAsync(user);
-
-            return new JsonResult("ok");
-        }
-
     }
 }

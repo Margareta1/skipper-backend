@@ -1,13 +1,18 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using skipper_backend.DTO;
 using skipper_backend.Identity;
 using skipper_backend.Store;
 using System.Runtime.InteropServices;
+using System.Security.Claims;
 
 namespace skipper_backend.Controllers
 {
+
+
     public class AccountController : BaseApiController
     {
         private readonly UserManager<User> _userManager;
@@ -22,78 +27,106 @@ namespace skipper_backend.Controllers
             _userManager = userManager;
         }
 
-        [HttpPost("login")]
-        public async Task<ActionResult<JsonResult>> Login(string username, string password)
+        [Authorize]
+        [HttpGet("something")]
+        public async Task<ActionResult<string>> Something()
         {
-            var user = await _userManager.FindByNameAsync(username);
-            if (user == null || !await _userManager.CheckPasswordAsync(user, password))
-                return Unauthorized();
 
-            var roles = _userManager.GetRolesAsync(user);
-
-            return new JsonResult("ok");
+            return "Great";
         }
 
-        //[HttpPost("register")]
-        //public async Task<ActionResult> RegisterUser(string username)
-        //{
-        //    var user = new User { UserName = registerDto.Username, Email = registerDto.Email };
+        [HttpPost("login")]
+        public async Task<ActionResult<string>> Login(LoginDto dto)
+        {
+            if (dto is null)
+            {
+                return BadRequest();
+            }
+            var user = await _userManager.FindByNameAsync(dto.Username);
+            if (user == null || !await _userManager.CheckPasswordAsync(user, dto.Password))
+            {
+                return Unauthorized();
+            }
 
-        //    var result = await _userManager.CreateAsync(user, registerDto.Password);
+            var roles = await _userManager.GetRolesAsync(user);
+           
+            var accessToken = await _tokenService.GenerateToken(user);
+            var refreshToken = _tokenService.GenerateRefreshToken();
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.Now.AddDays(1);
+            _context.SaveChanges();
+            return Ok(new AuthenticatedResponse
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                Roles = roles
+            });
+        }
 
-        //    if (!result.Succeeded)
-        //    {
-        //        foreach (var error in result.Errors)
-        //        {
-        //            ModelState.AddModelError(error.Code, error.Description);
-        //        }
+        [HttpPost("register")]
+        public async Task<ActionResult<AuthenticatedResponse>> RegisterUser(RegisterDto dto)
+        {
+            var user = new User { UserName = dto.Email, Email = dto.Email };
 
-        //        return ValidationProblem();
-        //    }
+            var result = await _userManager.CreateAsync(user, dto.Password);
 
-        //    await _userManager.AddToRoleAsync(user, "Member");
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(error.Code, error.Description);
+                }
 
-        //    return StatusCode(201);
-        //}
+                return ValidationProblem();
+            }
 
-        //[Authorize]
-        //[HttpGet("currentUser")]
-        //public async Task<ActionResult<UserDto>> GetCurrentUser()
-        //{
-        //    var user = await _userManager.FindByNameAsync(User.Identity.Name);
+            await _userManager.AddToRoleAsync(user, "Member");
+            var roles = await _userManager.GetRolesAsync(user);
 
-        //    var userBasket = await RetrieveBasket(User.Identity.Name);
+            var accessToken = await _tokenService.GenerateToken(user);
+            var refreshToken = _tokenService.GenerateRefreshToken();
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.Now.AddDays(1);
+            _context.SaveChanges();
+            return Ok(new AuthenticatedResponse
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                Roles = roles
+            });
 
-        //    return new UserDto
-        //    {
-        //        Email = user.Email,
-        //        Token = await _tokenService.GenerateToken(user),
-        //        Basket = userBasket?.MapBasketToDto()
-        //    };
-        //}
+        }
 
-        //[Authorize]
-        //[HttpGet("savedAddress")]
-        //public async Task<ActionResult<UserAddress>> GetSavedAddress()
-        //{
-        //    return await _userManager.Users
-        //        .Where(x => x.UserName == User.Identity.Name)
-        //        .Select(user => user.Address)
-        //        .FirstOrDefaultAsync();
-        //}
+        [HttpPost]
+        [Route("refresh")]
+        public async Task<ActionResult<AuthenticatedResponse>> RefreshAsync(RefreshDto dto)
+        {
+            if (dto is null)
+            {
+                return BadRequest();
 
-        //private async Task<Basket> RetrieveBasket(string buyerId)
-        //{
-        //    if (string.IsNullOrEmpty(buyerId))
-        //    {
-        //        Response.Cookies.Delete("buyerId");
-        //        return null;
-        //    }
+            }
+            string accessToken = dto.AccessToken;
+            string refreshToken = dto.RefreshToken;
+            var principal = _tokenService.GetPrincipalFromExpiredToken(accessToken);
+            var username = principal.Identity.Name;
+            var user = _context.Users.SingleOrDefault(u => u.UserName == username);
+            if (user is null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
+            {
+                return BadRequest();
+            }
+            var newAccessToken = await _tokenService.GenerateToken(user);
+            var newRefreshToken = _tokenService.GenerateRefreshToken();
+            var roles = await _userManager.GetRolesAsync(user);
+            user.RefreshToken = newRefreshToken;
+            _context.SaveChanges();
+            return Ok(new AuthenticatedResponse()
+            {
+                AccessToken = newAccessToken,
+                RefreshToken = newRefreshToken,
+                Roles = roles
+            });
+        }
 
-        //    return await _context.Baskets
-        //        .Include(i => i.Items)
-        //        .ThenInclude(p => p.Product)
-        //        .FirstOrDefaultAsync(basket => basket.BuyerId == buyerId);
-        //}
     }
 }
