@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using skipper_backend.Identity;
 using skipper_backend.Store;
@@ -14,7 +15,19 @@ namespace skipper_backend.Controllers
         {
             context = context;
             manager = userManager;
+            
         }
+
+        [Authorize]
+        [HttpPost("get/{id}")]
+        public async Task<ActionResult<string>> Something()
+        {
+            return "Ok";
+
+
+        }
+
+
 
     }
 }

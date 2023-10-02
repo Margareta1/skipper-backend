@@ -20,5 +20,9 @@ namespace skipper_backend.Models.SurveyCreator
 
         public string? Rgb { get; set; }
         public List<SurveyInput>? Inputs { get; set; }
+        [Required]
+        public DateTime? StartDate { get; set; }
+        [Required]
+        public DateTime? EndDate { get; set; }
     }
 }

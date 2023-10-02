@@ -1,30 +1,24 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using skipper_backend.DTO;
 using skipper_backend.Identity;
 using skipper_backend.Store;
-using System.Runtime.InteropServices;
-using System.Security.Claims;
 
 namespace skipper_backend.Controllers
 {
-
-
     public class AccountController : BaseApiController
     {
-        private readonly UserManager<User> _userManager;
-        private readonly TokenService _tokenService;
-        private readonly StoreContext _context;
+        private readonly UserManager<User> manager;
+        private readonly TokenService tokenService;
+        private readonly StoreContext context;
 
         public AccountController(UserManager<User> userManager, TokenService tokenService,
             StoreContext context)
         {
-            _context = context;
-            _tokenService = tokenService;
-            _userManager = userManager;
+            context = context;
+            tokenService = tokenService;
+            manager = userManager;
         }
 
         [Authorize]
@@ -32,7 +26,7 @@ namespace skipper_backend.Controllers
         public async Task<ActionResult<string>> Something()
         {
 
-            return "Great";
+            return User.Identity.Name;
         }
 
         [HttpPost("login")]
@@ -42,19 +36,19 @@ namespace skipper_backend.Controllers
             {
                 return BadRequest();
             }
-            var user = await _userManager.FindByNameAsync(dto.Username);
-            if (user == null || !await _userManager.CheckPasswordAsync(user, dto.Password))
+            var user = await manager.FindByNameAsync(dto.Username);
+            if (user == null || !await manager.CheckPasswordAsync(user, dto.Password))
             {
                 return Unauthorized();
             }
 
-            var roles = await _userManager.GetRolesAsync(user);
+            var roles = await manager.GetRolesAsync(user);
            
-            var accessToken = await _tokenService.GenerateToken(user);
-            var refreshToken = _tokenService.GenerateRefreshToken();
+            var accessToken = await tokenService.GenerateToken(user);
+            var refreshToken = tokenService.GenerateRefreshToken();
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime = DateTime.Now.AddDays(1);
-            _context.SaveChanges();
+            context.SaveChanges();
             return Ok(new AuthenticatedResponse
             {
                 AccessToken = accessToken,
@@ -67,7 +61,7 @@ namespace skipper_backend.Controllers
         {
             var user = new User { UserName = dto.Email, Email = dto.Email };
 
-            var result = await _userManager.CreateAsync(user, dto.Password);
+            var result = await manager.CreateAsync(user, dto.Password);
 
             if (!result.Succeeded)
             {
@@ -79,14 +73,14 @@ namespace skipper_backend.Controllers
                 return ValidationProblem();
             }
 
-            await _userManager.AddToRoleAsync(user, "Member");
-            var roles = await _userManager.GetRolesAsync(user);
+            await manager.AddToRoleAsync(user, "Member");
+            var roles = await manager.GetRolesAsync(user);
 
-            var accessToken = await _tokenService.GenerateToken(user);
-            var refreshToken = _tokenService.GenerateRefreshToken();
+            var accessToken = await tokenService.GenerateToken(user);
+            var refreshToken = tokenService.GenerateRefreshToken();
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime = DateTime.Now.AddDays(1);
-            _context.SaveChanges();
+            context.SaveChanges();
             return Ok(new AuthenticatedResponse
             {
                 AccessToken = accessToken,
@@ -106,18 +100,18 @@ namespace skipper_backend.Controllers
             }
             string accessToken = dto.AccessToken;
             string refreshToken = dto.RefreshToken;
-            var principal = _tokenService.GetPrincipalFromExpiredToken(accessToken);
+            var principal = tokenService.GetPrincipalFromExpiredToken(accessToken);
             var username = principal.Identity.Name;
-            var user = _context.Users.SingleOrDefault(u => u.UserName == username);
+            var user = context.Users.SingleOrDefault(u => u.UserName == username);
             if (user is null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
             {
                 return BadRequest();
             }
-            var newAccessToken = await _tokenService.GenerateToken(user);
-            var newRefreshToken = _tokenService.GenerateRefreshToken();
-            var roles = await _userManager.GetRolesAsync(user);
+            var newAccessToken = await tokenService.GenerateToken(user);
+            var newRefreshToken = tokenService.GenerateRefreshToken();
+            var roles = await manager.GetRolesAsync(user);
             user.RefreshToken = newRefreshToken;
-            _context.SaveChanges();
+            context.SaveChanges();
             return Ok(new AuthenticatedResponse()
             {
                 AccessToken = newAccessToken,
