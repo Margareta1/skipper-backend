@@ -12,6 +12,8 @@ using skipper_backend.Models.Staffing;
 using skipper_backend.Models.SurveyCreator;
 using skipper_backend.Models.SurveySolver;
 using System.Data;
+using static skipper_backend.Models.Employee.EmployeeProject;
+using System.Reflection.Emit;
 
 namespace skipper_backend.Store
 {
@@ -30,6 +32,16 @@ namespace skipper_backend.Store
                     new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "Member", NormalizedName = "MEMBER" },
                     new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "Admin", NormalizedName = "ADMIN" }
                 );
+            builder.Entity<EmployeeProject>()
+       .HasKey(ep => new { ep.CompanyProjectId, ep.UserId });
+
+            builder.Entity<EmployeeProject>()
+                .HasOne(ep => ep.CompanyProject)
+                .WithMany(p => p.Employees)
+                .HasForeignKey(ep => ep.CompanyProjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+
         }
 
         public DbSet<CV> CV { get; set; }
@@ -74,7 +86,7 @@ namespace skipper_backend.Store
         public DbSet<TextArea> TextArea { get; set; }
         public DbSet<TextInput> TextInput { get; set; }
         public DbSet<SurveyInput> SurveyInput { get; set; }
-
-
+        public DbSet<ProjectLead> ProjectLead { get; set; }
+        public DbSet<EmployeeProject> EmployeeProject { get; set; }
     }
 }

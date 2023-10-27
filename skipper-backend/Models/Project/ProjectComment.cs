@@ -14,5 +14,10 @@ namespace skipper_backend.Models.Project
         public string CommentorId { get; set; }
         public User Commentor { get; set; }
 
+        [Required]
+        [ForeignKey(nameof(CompanyProject))]
+        public Guid ProjectId { get; set; }
+        public CompanyProject Project { get; set; }
+
     }
 }

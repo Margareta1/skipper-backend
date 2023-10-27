@@ -40,7 +40,7 @@ namespace skipper_backend.Identity
                 issuer: null,
                 audience: null,
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(5),
+                expires: DateTime.Now.AddDays(1),
                 signingCredentials: creds
             );
             

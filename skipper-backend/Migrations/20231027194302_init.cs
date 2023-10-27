@@ -41,6 +41,20 @@ namespace skipper_backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CompanyProject",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Active = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CompanyProject", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Language",
                 columns: table => new
                 {
@@ -134,6 +148,50 @@ namespace skipper_backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CompanyProjectFile",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CompanyProjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Url = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CompanyProjectFile", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CompanyProjectFile_CompanyProject_CompanyProjectId",
+                        column: x => x.CompanyProjectId,
+                        principalTable: "CompanyProject",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProjectTag",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TagId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProjectTag", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProjectTag_CompanyProject_ProjectId",
+                        column: x => x.ProjectId,
+                        principalTable: "CompanyProject",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ProjectTag_Tag_TagId",
+                        column: x => x.TagId,
+                        principalTable: "Tag",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AspNetUserClaims",
                 columns: table => new
                 {
@@ -188,6 +246,9 @@ namespace skipper_backend.Migrations
                     BillingPerHour = table.Column<double>(type: "float", nullable: true),
                     FixedSalaryGross = table.Column<double>(type: "float", nullable: true),
                     PictureUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    RefreshToken = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    RefreshTokenExpiryTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    EmployedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     LineId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     SkillsMatrixId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -225,27 +286,6 @@ namespace skipper_backend.Migrations
                     table.ForeignKey(
                         name: "FK_AspNetUserTokens_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "CompanyProject",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Active = table.Column<bool>(type: "bit", nullable: false),
-                    ProjectLeadId = table.Column<string>(type: "nvarchar(450)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CompanyProject", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_CompanyProject_AspNetUsers_ProjectLeadId",
-                        column: x => x.ProjectLeadId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -339,6 +379,38 @@ namespace skipper_backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "EmployeeProject",
+                columns: table => new
+                {
+                    CompanyProjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    UtilizationTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Utilization = table.Column<double>(type: "float", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EmployeeProject", x => new { x.CompanyProjectId, x.UserId });
+                    table.ForeignKey(
+                        name: "FK_EmployeeProject_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_EmployeeProject_CompanyProject_CompanyProjectId",
+                        column: x => x.CompanyProjectId,
+                        principalTable: "CompanyProject",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_EmployeeProject_UtilizationType_UtilizationTypeId",
+                        column: x => x.UtilizationTypeId,
+                        principalTable: "UtilizationType",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Goal",
                 columns: table => new
                 {
@@ -415,6 +487,49 @@ namespace skipper_backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ProjectComment",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CommentorId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ProjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProjectComment", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProjectComment_AspNetUsers_CommentorId",
+                        column: x => x.CommentorId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ProjectComment_CompanyProject_ProjectId",
+                        column: x => x.ProjectId,
+                        principalTable: "CompanyProject",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProjectLead",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    LeadId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProjectLead", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProjectLead_AspNetUsers_LeadId",
+                        column: x => x.LeadId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "SkillsMatrix",
                 columns: table => new
                 {
@@ -440,7 +555,9 @@ namespace skipper_backend.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatorId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Rgb = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Rgb = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -449,74 +566,6 @@ namespace skipper_backend.Migrations
                         name: "FK_Survey_AspNetUsers_CreatorId",
                         column: x => x.CreatorId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "CompanyProjectFile",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CompanyProjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Url = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CompanyProjectFile", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_CompanyProjectFile_CompanyProject_CompanyProjectId",
-                        column: x => x.CompanyProjectId,
-                        principalTable: "CompanyProject",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ProjectComment",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CommentorId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    CompanyProjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProjectComment", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ProjectComment_AspNetUsers_CommentorId",
-                        column: x => x.CommentorId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ProjectComment_CompanyProject_CompanyProjectId",
-                        column: x => x.CompanyProjectId,
-                        principalTable: "CompanyProject",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ProjectTag",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TagId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ProjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProjectTag", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ProjectTag_CompanyProject_ProjectId",
-                        column: x => x.ProjectId,
-                        principalTable: "CompanyProject",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ProjectTag_Tag_TagId",
-                        column: x => x.TagId,
-                        principalTable: "Tag",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -1080,8 +1129,8 @@ namespace skipper_backend.Migrations
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
                 values: new object[,]
                 {
-                    { "03bf6d87-d2a8-442a-93a8-25629ed5e45d", null, "Member", "MEMBER" },
-                    { "6c61d459-7d7e-4b95-9a6a-ac1dcd1bea54", null, "Admin", "ADMIN" }
+                    { "0b1b4a7d-f840-4108-bc39-1fd5097e5689", null, "Admin", "ADMIN" },
+                    { "9d5a2443-7590-4ddb-91bf-e6863a5050f7", null, "Member", "MEMBER" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -1139,11 +1188,6 @@ namespace skipper_backend.Migrations
                 column: "SurveyId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CompanyProject_ProjectLeadId",
-                table: "CompanyProject",
-                column: "ProjectLeadId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_CompanyProjectFile_CompanyProjectId",
                 table: "CompanyProjectFile",
                 column: "CompanyProjectId");
@@ -1187,6 +1231,16 @@ namespace skipper_backend.Migrations
                 name: "IX_EmployeePositionAndLevel_PositionId",
                 table: "EmployeePositionAndLevel",
                 column: "PositionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeeProject_UserId",
+                table: "EmployeeProject",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeeProject_UtilizationTypeId",
+                table: "EmployeeProject",
+                column: "UtilizationTypeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmployeeSkill_EmployeeId",
@@ -1299,9 +1353,14 @@ namespace skipper_backend.Migrations
                 column: "CommentorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ProjectComment_CompanyProjectId",
+                name: "IX_ProjectComment_ProjectId",
                 table: "ProjectComment",
-                column: "CompanyProjectId");
+                column: "ProjectId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProjectLead_LeadId",
+                table: "ProjectLead",
+                column: "LeadId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProjectTag_ProjectId",
@@ -1544,6 +1603,9 @@ namespace skipper_backend.Migrations
                 name: "EmployeePositionAndLevel");
 
             migrationBuilder.DropTable(
+                name: "EmployeeProject");
+
+            migrationBuilder.DropTable(
                 name: "EmployeeSkill");
 
             migrationBuilder.DropTable(
@@ -1566,6 +1628,9 @@ namespace skipper_backend.Migrations
 
             migrationBuilder.DropTable(
                 name: "ProjectComment");
+
+            migrationBuilder.DropTable(
+                name: "ProjectLead");
 
             migrationBuilder.DropTable(
                 name: "ProjectTag");

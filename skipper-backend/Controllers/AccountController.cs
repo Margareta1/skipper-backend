@@ -9,24 +9,17 @@ namespace skipper_backend.Controllers
 {
     public class AccountController : BaseApiController
     {
-        private readonly UserManager<User> manager;
+        private readonly UserManager<User> userManager;
         private readonly TokenService tokenService;
         private readonly StoreContext context;
 
-        public AccountController(UserManager<User> userManager, TokenService tokenService,
-            StoreContext context)
+        public AccountController(UserManager<User> manager, TokenService service,
+            StoreContext storeContext)
         {
-            context = context;
-            tokenService = tokenService;
-            manager = userManager;
-        }
+            userManager = manager ;
+            tokenService = service;
+            context = storeContext;
 
-        [Authorize]
-        [HttpGet("something")]
-        public async Task<ActionResult<string>> Something()
-        {
-
-            return User.Identity.Name;
         }
 
         [HttpPost("login")]
@@ -36,13 +29,13 @@ namespace skipper_backend.Controllers
             {
                 return BadRequest();
             }
-            var user = await manager.FindByNameAsync(dto.Username);
-            if (user == null || !await manager.CheckPasswordAsync(user, dto.Password))
+            var user = await userManager.FindByNameAsync(dto.Username);
+            if (user == null || !await userManager.CheckPasswordAsync(user, dto.Password))
             {
                 return Unauthorized();
             }
 
-            var roles = await manager.GetRolesAsync(user);
+            var roles = await userManager.GetRolesAsync(user);
            
             var accessToken = await tokenService.GenerateToken(user);
             var refreshToken = tokenService.GenerateRefreshToken();
@@ -61,7 +54,7 @@ namespace skipper_backend.Controllers
         {
             var user = new User { UserName = dto.Email, Email = dto.Email };
 
-            var result = await manager.CreateAsync(user, dto.Password);
+            var result = await userManager.CreateAsync(user, dto.Password);
 
             if (!result.Succeeded)
             {
@@ -73,8 +66,8 @@ namespace skipper_backend.Controllers
                 return ValidationProblem();
             }
 
-            await manager.AddToRoleAsync(user, "Member");
-            var roles = await manager.GetRolesAsync(user);
+            await userManager.AddToRoleAsync(user, "Member");
+            var roles = await userManager.GetRolesAsync(user);
 
             var accessToken = await tokenService.GenerateToken(user);
             var refreshToken = tokenService.GenerateRefreshToken();
@@ -109,7 +102,7 @@ namespace skipper_backend.Controllers
             }
             var newAccessToken = await tokenService.GenerateToken(user);
             var newRefreshToken = tokenService.GenerateRefreshToken();
-            var roles = await manager.GetRolesAsync(user);
+            var roles = await userManager.GetRolesAsync(user);
             user.RefreshToken = newRefreshToken;
             context.SaveChanges();
             return Ok(new AuthenticatedResponse()

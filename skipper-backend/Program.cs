@@ -61,6 +61,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = false,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
+            ClockSkew = TimeSpan.Zero,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.
                 GetBytes(builder.Configuration["JWTSettings:TokenKey"]))
         };
@@ -79,6 +80,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c =>
     {
         c.ConfigObject.AdditionalItems.Add("persistAuthorization", "true");
+        
     });
 }
 

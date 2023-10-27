@@ -23,7 +23,7 @@ namespace skipper_backend.Models.CV
         public string? About { get; set; }
         public string? ImageUrl { get; set; }
         public string? Rgb { get; set; }
-
+        public IList<CVItem> CVItems { get; set; }
 
     }
 }
