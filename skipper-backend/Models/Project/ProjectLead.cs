@@ -13,5 +13,9 @@ namespace skipper_backend.Models.Project
         [ForeignKey(nameof(User))]
         public string LeadId { get; set; }
         public User Lead { get; set; }
+        [Required]
+        [ForeignKey(nameof(CompanyProject))]
+        public Guid ProjectId { get; set; }
+        public CompanyProject Project { get; set; }
     }
 }

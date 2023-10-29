@@ -18,6 +18,7 @@ namespace skipper_backend.Models.Project
         [ForeignKey(nameof(CompanyProject))]
         public Guid ProjectId { get; set; }
         public CompanyProject Project { get; set; }
+        public string Comment { get; set; }
 
     }
 }

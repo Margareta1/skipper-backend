@@ -28,6 +28,11 @@ namespace skipper_backend.Models.Staffing
         public UtilizationType UtilizationType { get; set; }
 
         [Required]
+        [ForeignKey(nameof(CompanyProject))]
+        public Guid CompanyProjectId { get; set; }
+        public CompanyProject CompanyProject { get; set; }
+
+        [Required]
         public double UtilizationAmount { get; set; }
 
         [ForeignKey(nameof(LevelOfExperience))]
@@ -41,8 +46,6 @@ namespace skipper_backend.Models.Staffing
         public DateTime? PrefferedStart { get; set; }
         public List<GeneralSkill>? GeneralSkills { get; set; }
         public List<HiringPostRequiredLanguage>? RequiredLanguages { get; set; }
-        public List<HiringPostApplication>? Applications { get; set; }
-        public List<HiringPostComment>? Comments { get; set; }
         public List<HiringPostFile>? Files { get; set; }
 
     }

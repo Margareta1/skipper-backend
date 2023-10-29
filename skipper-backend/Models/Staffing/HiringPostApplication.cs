@@ -19,6 +19,10 @@ namespace skipper_backend.Models.Staffing
 
         public bool Accepted { get; set; }
 
+        [Required]
+        [ForeignKey(nameof(HiringPost))]
+        public Guid HiringPostId { get; set; }
+        public HiringPost HiringPost { get; set; }
 
     }
 }

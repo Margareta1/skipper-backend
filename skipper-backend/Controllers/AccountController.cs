@@ -53,6 +53,10 @@ namespace skipper_backend.Controllers
         public async Task<ActionResult<AuthenticatedResponse>> RegisterUser(RegisterDto dto)
         {
             var user = new User { UserName = dto.Email, Email = dto.Email };
+            if(context.Users.First(x=> x.UserName == dto.Email) != null)
+            {
+                return BadRequest();
+            }
 
             var result = await userManager.CreateAsync(user, dto.Password);
 

@@ -20,5 +20,10 @@ namespace skipper_backend.Models.Staffing
         public string CommentorId { get; set; }
         public User Commentor { get; set; }
 
+        [Required]
+        [ForeignKey(nameof(HiringPost))]
+        public Guid HiringPostId { get; set; }
+        public HiringPost HiringPost { get; set; }
+
     }
 }

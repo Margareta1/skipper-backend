@@ -9,6 +9,7 @@ namespace skipper_backend.Models.Employee
 
     public class EmployeeProject
     {
+        public Guid Id { get; set; }
         public Guid CompanyProjectId { get; set; }
         public CompanyProject CompanyProject { get; set; }
 

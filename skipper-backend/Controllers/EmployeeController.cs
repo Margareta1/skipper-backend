@@ -8,6 +8,7 @@ using skipper_backend.Store;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using skipper_backend.Models.Employee;
+using System.Runtime.ExceptionServices;
 
 namespace skipper_backend.Controllers
 {
@@ -24,12 +25,164 @@ namespace skipper_backend.Controllers
 
         }
 
-        //add employee to line
-        //add employee language
-        //add employee position and level
-        //add employee skill
-        //add employee project with utilization
-        //employee wants to leave project
+        [Authorize]
+        [HttpPost("addemployeetoproject")]
+        public async Task<ActionResult<Object>> AddEmployeeToProject(AddEmployeeToProjectDto dto)
+        {
+            var user = await manager.FindByNameAsync(dto.EmployeeUsername);
+            var project = context.CompanyProject.Where(x => x.Id == dto.CompanyProjectId).First();
+            var utilizationType = context.UtilizationType.Where(x => x.Id == dto.UtilizationTypeId).First();
+
+            if (user == null || project ==null || utilizationType==null)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                var newEmployeeProject = new EmployeeProject();
+                newEmployeeProject.Id = Guid.NewGuid();
+                newEmployeeProject.User = user;
+                newEmployeeProject.UserId = user.Id;
+                newEmployeeProject.CompanyProject = project;
+                newEmployeeProject.CompanyProjectId = project.Id;
+                newEmployeeProject.Utilization = dto.Utilization;
+                newEmployeeProject.UtilizationTypeId = utilizationType.Id;
+                newEmployeeProject.UtilizationType = utilizationType;
+                context.EmployeeProject.Add(newEmployeeProject);
+                context.SaveChanges();
+                return Ok();
+                
+            }
+            catch (Exception)
+            {
+                return UnprocessableEntity();
+            }
+        }               
+        
+        [Authorize]
+        [HttpPost("addemployeeskill")]
+        public async Task<ActionResult<Object>> AddEmployeeSkill(AddEmployeeSkillDto dto)
+        {
+            var user = await manager.FindByNameAsync(dto.EmployeeUsername);
+            var skill = context.GeneralSkill.Where(x => x.Id == dto.GeneralSkillId).First();
+            if (user == null || skill ==null)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                var newEmployeeSkill = new EmployeeSkill();
+                newEmployeeSkill.GeneralSkill = skill;
+                newEmployeeSkill.GeneralSkillId = skill.Id;
+                newEmployeeSkill.Id = Guid.NewGuid();
+                newEmployeeSkill.EmployeeId = user.Id;
+                newEmployeeSkill.Employee = user;
+                context.EmployeeSkill.Add(newEmployeeSkill);
+               context.SaveChanges();
+                return Ok();
+                
+            }
+            catch (Exception)
+            {
+                return UnprocessableEntity();
+            }
+        }                  
+        
+        [Authorize]
+        [HttpPost("addemployeepositionlevel")]
+        public async Task<ActionResult<Object>> AddEmployeePositionLevel(AddEmployeePositionLevelDto dto)
+        {
+            var user = await manager.FindByNameAsync(dto.EmployeeUsername);
+            var position = context.Position.Where(x => x.Id == dto.PositionId).First();
+            var level = context.LevelOfExperience.Where(x => x.Id == dto.LevelOfExperienceId).First();
+            if (user == null || position ==null || level==null)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                var newPositionLevel = new EmployeePositionAndLevel();
+                newPositionLevel.Position = position;
+                newPositionLevel.PositionId = position.Id;
+                newPositionLevel.Id = Guid.NewGuid();
+                newPositionLevel.Employee = user;
+                newPositionLevel.EmployeeId = user.Id;
+                newPositionLevel.LevelOfExperienceId = level.Id;
+                newPositionLevel.LevelOfExperience = level;
+                context.EmployeePositionAndLevel.Add(newPositionLevel);
+               context.SaveChanges();
+                return Ok();
+                
+            }
+            catch (Exception)
+            {
+                return UnprocessableEntity();
+            }
+        }           
+        
+        
+        [Authorize]
+        [HttpPost("addemployeelanguage")]
+        public async Task<ActionResult<Object>> AddEmployeeToLine(AddEmployeeLanguageDto dto)
+        {
+            var user = await manager.FindByNameAsync(dto.EmployeeUsername);
+            var language = context.Language.Where(x => x.Id == dto.LanguageId).First();
+            var languageLevel = context.LanguageLevel.Where(x => x.Id == dto.LanguageLevelId).First();
+            if (user == null || language ==null || languageLevel==null)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                var newEmployeeLanguage = new EmployeeLanguage();
+                newEmployeeLanguage.Id = Guid.NewGuid();
+                newEmployeeLanguage.Language = language;
+                newEmployeeLanguage.LanguageId = language.Id;
+                newEmployeeLanguage.LanguageLevel = languageLevel;
+                newEmployeeLanguage.LanguageLevelId = languageLevel.Id;
+                newEmployeeLanguage.Employee = user;
+                newEmployeeLanguage.EmployeeId = user.Id;
+                context.EmployeeLanguage.Add(newEmployeeLanguage);
+               context.SaveChanges();
+                return Ok();
+                
+            }
+            catch (Exception)
+            {
+                return UnprocessableEntity();
+            }
+        }        
+        
+        [Authorize]
+        [HttpPost("addemployeetoline")]
+        public async Task<ActionResult<Object>> AddEmployeeToLine(AddEmployeeToLineDto dto)
+        {
+            var user = await manager.FindByNameAsync(dto.EmployeeUsername);
+            var lineManager = await manager.FindByEmailAsync(dto.ManagerUsername);
+            if (user == null || lineManager ==null)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                var line = context.Line.Where(x=> x.LineManager==lineManager).First().Employees.Append(user);
+               context.SaveChanges();
+                return Ok();
+                
+            }
+            catch (Exception)
+            {
+                return UnprocessableEntity();
+            }
+
+
+        }
+
 
         [Authorize]
         [HttpGet("getallemployees")]

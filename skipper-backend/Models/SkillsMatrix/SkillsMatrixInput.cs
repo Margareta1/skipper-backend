@@ -15,10 +15,11 @@ namespace skipper_backend.Models.SkillsMatrix
         [Required]
         [ForeignKey(nameof(User))]
         public string AssigneeId { get; set; }
-        public User Assignee { get; set; } 
+        public User Assignee { get; set; }
 
         [Required]
         public List<SkillsMatrixSingleSkillInput> Inputs { get; set; }
+
 
     }
 }

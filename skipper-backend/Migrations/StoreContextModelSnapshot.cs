@@ -51,13 +51,13 @@ namespace skipper_backend.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "9d5a2443-7590-4ddb-91bf-e6863a5050f7",
+                            Id = "125ff667-fcd8-4b5a-8b87-bd09507a9518",
                             Name = "Member",
                             NormalizedName = "MEMBER"
                         },
                         new
                         {
-                            Id = "0b1b4a7d-f840-4108-bc39-1fd5097e5689",
+                            Id = "fe45505a-05a6-4d20-a6b4-62bbe2ebeb1d",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -390,6 +390,9 @@ namespace skipper_backend.Migrations
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<double>("Utilization")
                         .HasColumnType("float");
 
@@ -625,6 +628,10 @@ namespace skipper_backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("CommentorId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -651,9 +658,14 @@ namespace skipper_backend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
                     b.HasIndex("LeadId");
+
+                    b.HasIndex("ProjectId");
 
                     b.ToTable("ProjectLead");
                 });
@@ -805,6 +817,9 @@ namespace skipper_backend.Migrations
                     b.Property<double?>("Budget")
                         .HasColumnType("float");
 
+                    b.Property<Guid>("CompanyProjectId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -839,6 +854,8 @@ namespace skipper_backend.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CompanyProjectId");
+
                     b.HasIndex("CreatorId");
 
                     b.HasIndex("EmployeeLevelOfExperienceId");
@@ -864,7 +881,7 @@ namespace skipper_backend.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("HiringPostId")
+                    b.Property<Guid>("HiringPostId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -890,7 +907,7 @@ namespace skipper_backend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<Guid?>("HiringPostId")
+                    b.Property<Guid>("HiringPostId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("PostedAt")
@@ -1618,7 +1635,15 @@ namespace skipper_backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("skipper_backend.Models.Project.CompanyProject", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Lead");
+
+                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("skipper_backend.Models.Project.ProjectTag", b =>
@@ -1682,6 +1707,12 @@ namespace skipper_backend.Migrations
 
             modelBuilder.Entity("skipper_backend.Models.Staffing.HiringPost", b =>
                 {
+                    b.HasOne("skipper_backend.Models.Project.CompanyProject", "CompanyProject")
+                        .WithMany()
+                        .HasForeignKey("CompanyProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("skipper_backend.Identity.User", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorId")
@@ -1698,6 +1729,8 @@ namespace skipper_backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("CompanyProject");
+
                     b.Navigation("Creator");
 
                     b.Navigation("EmployeeLevelOfExperience");
@@ -1713,11 +1746,15 @@ namespace skipper_backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("skipper_backend.Models.Staffing.HiringPost", null)
-                        .WithMany("Applications")
-                        .HasForeignKey("HiringPostId");
+                    b.HasOne("skipper_backend.Models.Staffing.HiringPost", "HiringPost")
+                        .WithMany()
+                        .HasForeignKey("HiringPostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Applicant");
+
+                    b.Navigation("HiringPost");
                 });
 
             modelBuilder.Entity("skipper_backend.Models.Staffing.HiringPostComment", b =>
@@ -1728,11 +1765,15 @@ namespace skipper_backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("skipper_backend.Models.Staffing.HiringPost", null)
-                        .WithMany("Comments")
-                        .HasForeignKey("HiringPostId");
+                    b.HasOne("skipper_backend.Models.Staffing.HiringPost", "HiringPost")
+                        .WithMany()
+                        .HasForeignKey("HiringPostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Commentor");
+
+                    b.Navigation("HiringPost");
                 });
 
             modelBuilder.Entity("skipper_backend.Models.Staffing.HiringPostFile", b =>
@@ -1983,10 +2024,6 @@ namespace skipper_backend.Migrations
 
             modelBuilder.Entity("skipper_backend.Models.Staffing.HiringPost", b =>
                 {
-                    b.Navigation("Applications");
-
-                    b.Navigation("Comments");
-
                     b.Navigation("Files");
 
                     b.Navigation("GeneralSkills");
