@@ -20,7 +20,7 @@ namespace skipper_backend.Models.Project
         public bool Active { get; set; }
 
         public List<ProjectComment> Comments { get; set; }
-        public IList<EmployeeProject> Employees { get; set; }
+        public List<EmployeeProject> Employees { get; set; }
 
     }
 }

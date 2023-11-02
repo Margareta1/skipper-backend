@@ -81,3 +81,4 @@ C:\Users\38597\Desktop\skipper\skipper-backend\skipper-backend\obj\Debug\net7.0\
 C:\Users\38597\Desktop\skipper\skipper-backend\skipper-backend\obj\Debug\net7.0\skipper-backend.pdb
 C:\Users\38597\Desktop\skipper\skipper-backend\skipper-backend\obj\Debug\net7.0\skipper-backend.genruntimeconfig.cache
 C:\Users\38597\Desktop\skipper\skipper-backend\skipper-backend\obj\Debug\net7.0\ref\skipper-backend.dll
+C:\Users\38597\Desktop\skipper\skipper-backend\skipper-backend\bin\Debug\net7.0\Newtonsoft.Json.dll

@@ -12,16 +12,18 @@ namespace skipper_backend.Controllers
 {
     public class GeneralController : Controller
     {
-        private readonly UserManager<User> manager;
+        private readonly UserManager<User> userManager;
+        private readonly TokenService tokenService;
         private readonly StoreContext context;
 
-        public GeneralController(UserManager<User> userManager, StoreContext context)
+        public GeneralController(UserManager<User> manager, TokenService service,
+            StoreContext storeContext)
         {
-            context = context;
-            manager = userManager;
+            userManager = manager;
+            tokenService = service;
+            context = storeContext;
 
         }
-        //dodaj ručno sve language levele i utilization types
 
 
         [Authorize]
@@ -117,6 +119,10 @@ namespace skipper_backend.Controllers
         {
             try
             {
+                if (context.AppPreferences.ToList().Count == 0)
+                {
+                    return Ok("No entry");
+                }
                 return context.AppPreferences.ToList()[0];
             }
             catch (Exception)
@@ -173,7 +179,7 @@ namespace skipper_backend.Controllers
         public async Task<ActionResult<Object>> AddLevelOfExperience(AddLevelOfExperienceDto dto)
         {
 
-            if (context.LevelOfExperience.First(x=> x.Title==dto.Title) !=null)
+            if (context.LevelOfExperience.Any(x=> x.Title==dto.Title))
             {
                 return BadRequest();
             }
@@ -199,7 +205,7 @@ namespace skipper_backend.Controllers
         public async Task<ActionResult<Object>> AddGeneralSkill(AddGeneralSkillDto dto)
         {
 
-            if (context.GeneralSkill.First(x => x.Name == dto.Name) != null)
+            if (context.GeneralSkill.Any(x => x.Name == dto.Name))
             {
                 return BadRequest();
             }
@@ -225,7 +231,7 @@ namespace skipper_backend.Controllers
         public async Task<ActionResult<Object>> AddLanguage(AddLanguageDto dto)
         {
 
-            if (context.Language.First(x=> x.Name==dto.Name) !=null)
+            if (context.Language.Any(x=> x.Name==dto.Name))
             {
                 return BadRequest();
             }

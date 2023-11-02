@@ -14,6 +14,6 @@ namespace skipper_backend.Models.Employee
         public string LineManagerId { get; set; }
         public User LineManager { get; set; }
 
-        public IList<User> Employees { get; set; }
+        public List<User> Employees { get; set; }
     }
 }

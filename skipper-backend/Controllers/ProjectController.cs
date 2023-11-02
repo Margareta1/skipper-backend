@@ -7,6 +7,8 @@ using skipper_backend.Models.Employee;
 using skipper_backend.Models.Project;
 using skipper_backend.Store;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 
 namespace skipper_backend.Controllers
 {
@@ -27,7 +29,7 @@ namespace skipper_backend.Controllers
 
         [Authorize]
         [HttpGet("getprojects")]
-        public async Task<ActionResult<Object>> GetGoals()
+        public async Task<ActionResult<Object>> GetProjects()
         {
 
             try
@@ -37,10 +39,43 @@ namespace skipper_backend.Controllers
             catch (Exception)
             {
 
-                return NotFound();
+                return new JsonResult("Unprocessable");
             }
         }
-        
+
+        [Authorize]
+        [HttpGet("getprojectemployees")]
+        public async Task<ActionResult<Object>> GetProjectEmployees(GetProjectEmployeesDto dto)
+        {
+
+            try
+            {
+                return context.EmployeeProject.Where(x=> x.CompanyProjectId==Guid.Parse(dto.ProjectId)).ToList();
+            }
+            catch (Exception)
+            {
+
+                return new JsonResult("Unprocessable");
+            }
+        }
+
+        [Authorize]
+        [HttpGet("getprojectcomments")]
+        public async Task<ActionResult<Object>> GetProjectComments(GetProjectEmployeesDto dto)
+        {
+
+            try
+            {
+                return context.ProjectComment.Where(x=> x.ProjectId==Guid.Parse(dto.ProjectId)).ToList();
+            }
+            catch (Exception)
+            {
+
+                return new JsonResult("Unprocessable");
+            }
+        }
+
+
         [Authorize]
         [HttpPost("removeemployeefromproject")]
         public async Task<ActionResult<Object>> RemoveEmployeeFromProject(RemoveEmployeeFromProjectDto dto)
@@ -235,17 +270,22 @@ namespace skipper_backend.Controllers
 
                 foreach (var item in dto.TagIds)
                 {
-                    var newtag = new ProjectTag();
+                    var newtag = new Tag();
                     newtag.Id = Guid.NewGuid();
-                    newtag.TagId = Guid.Parse(item);
-                    newtag.ProjectId = newProject.Id;
-                    context.ProjectTag.Add(newtag);
+                    newtag.Title = item;
+                    context.Tag.Add(newtag);
+                    var newProjectTag = new ProjectTag();
+                    newProjectTag.Id = Guid.NewGuid();
+                    newProjectTag.TagId = newtag.Id;
+                    newProjectTag.ProjectId = newProject.Id;
+                    context.ProjectTag.Add(newProjectTag);
 
                 }
-
+                context.SaveChanges();
                 var newLead = new ProjectLead();
                 newLead.Id = Guid.NewGuid();
-                newLead.LeadId=context.Users.First(x=> x.Id==dto.ProjectLeadId).Id;
+                newLead.LeadId=dto.ProjectLeadId;
+                newLead.ProjectId = newProject.Id;
                 context.ProjectLead.Add(newLead);
 
                 context.SaveChanges();

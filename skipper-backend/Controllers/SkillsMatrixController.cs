@@ -23,7 +23,8 @@ namespace skipper_backend.Controllers
             context = storeContext;
         }
 
-        //compare skills matrix inputs?
+        //delete matrix not working?
+        // check solve
 
         [Authorize]
         [HttpPost("compareskillsmatrixinput")]
@@ -37,18 +38,9 @@ namespace skipper_backend.Controllers
             {
                 return NotFound();
             }
-
-            if (sm.CreatorId!=user.Id)
-            {
-                return Unauthorized();
-            }
-
             try
             {
-                context.SkillsMatrix.Remove(sm);
-                context.SaveChanges();
-                return Ok();
-
+                return context.SkillsMatrixInput.Where(x => x.Id == Guid.Parse(dto.SkillsMatrixId)).ToList();
             }
             catch (Exception)
             {
@@ -185,6 +177,41 @@ namespace skipper_backend.Controllers
 
         }
 
+        [Authorize]
+        [HttpGet("getallskillsmatrixes")]
+        public async Task<ActionResult<Object>> GetAllSkillsMatrixes()
+        {
+
+            try
+            {
+                return context.SkillsMatrix.ToList();
+            }
+            catch (Exception)
+            {
+
+                return new JsonResult("Unprocessable");
+            }
+
+
+        }
+
+        [Authorize]
+        [HttpGet("getassignedskillsmatrixes")]
+        public async Task<ActionResult<Object>> GetAssignedSkillsMatrixes()
+        {
+
+            var username = User.Identity.Name;
+            var user = await userManager.FindByNameAsync(username);
+            try
+            {
+                return context.SkillsMatrix.Where(x => x.Assignees.Contains(user)).ToList();
+            }
+            catch (Exception)
+            {
+
+                return new JsonResult("Unprocessable");
+            }
+        }
 
     }
 }

@@ -15,13 +15,16 @@ namespace skipper_backend.Controllers
 
     public class EmployeeController : BaseApiController
     {
-        private readonly UserManager<User> manager;
+        private readonly UserManager<User> userManager;
+        private readonly TokenService tokenService;
         private readonly StoreContext context;
 
-        public EmployeeController(UserManager<User> userManager,StoreContext context)
+        public EmployeeController(UserManager<User> manager, TokenService service,
+            StoreContext storeContext)
         {
-            context = context;
-            manager = userManager;
+            userManager = manager;
+            tokenService = service;
+            context = storeContext;
 
         }
 
@@ -29,7 +32,7 @@ namespace skipper_backend.Controllers
         [HttpPost("addemployeetoproject")]
         public async Task<ActionResult<Object>> AddEmployeeToProject(AddEmployeeToProjectDto dto)
         {
-            var user = await manager.FindByNameAsync(dto.EmployeeUsername);
+            var user = await userManager.FindByNameAsync(dto.EmployeeUsername);
             var project = context.CompanyProject.Where(x => x.Id == dto.CompanyProjectId).First();
             var utilizationType = context.UtilizationType.Where(x => x.Id == dto.UtilizationTypeId).First();
 
@@ -64,7 +67,7 @@ namespace skipper_backend.Controllers
         [HttpPost("addemployeeskill")]
         public async Task<ActionResult<Object>> AddEmployeeSkill(AddEmployeeSkillDto dto)
         {
-            var user = await manager.FindByNameAsync(dto.EmployeeUsername);
+            var user = await userManager.FindByNameAsync(dto.EmployeeUsername);
             var skill = context.GeneralSkill.Where(x => x.Id == dto.GeneralSkillId).First();
             if (user == null || skill ==null)
             {
@@ -94,7 +97,7 @@ namespace skipper_backend.Controllers
         [HttpPost("addemployeepositionlevel")]
         public async Task<ActionResult<Object>> AddEmployeePositionLevel(AddEmployeePositionLevelDto dto)
         {
-            var user = await manager.FindByNameAsync(dto.EmployeeUsername);
+            var user = await userManager.FindByNameAsync(dto.EmployeeUsername);
             var position = context.Position.Where(x => x.Id == dto.PositionId).First();
             var level = context.LevelOfExperience.Where(x => x.Id == dto.LevelOfExperienceId).First();
             if (user == null || position ==null || level==null)
@@ -128,7 +131,7 @@ namespace skipper_backend.Controllers
         [HttpPost("addemployeelanguage")]
         public async Task<ActionResult<Object>> AddEmployeeToLine(AddEmployeeLanguageDto dto)
         {
-            var user = await manager.FindByNameAsync(dto.EmployeeUsername);
+            var user = await userManager.FindByNameAsync(dto.EmployeeUsername);
             var language = context.Language.Where(x => x.Id == dto.LanguageId).First();
             var languageLevel = context.LanguageLevel.Where(x => x.Id == dto.LanguageLevelId).First();
             if (user == null || language ==null || languageLevel==null)
@@ -161,8 +164,8 @@ namespace skipper_backend.Controllers
         [HttpPost("addemployeetoline")]
         public async Task<ActionResult<Object>> AddEmployeeToLine(AddEmployeeToLineDto dto)
         {
-            var user = await manager.FindByNameAsync(dto.EmployeeUsername);
-            var lineManager = await manager.FindByEmailAsync(dto.ManagerUsername);
+            var user = await userManager.FindByNameAsync(dto.EmployeeUsername);
+            var lineManager = await userManager.FindByEmailAsync(dto.ManagerUsername);
             if (user == null || lineManager ==null)
             {
                 return NotFound();
@@ -170,8 +173,18 @@ namespace skipper_backend.Controllers
 
             try
             {
-                var line = context.Line.Where(x=> x.LineManager==lineManager).First().Employees.Append(user);
-               context.SaveChanges();
+                var line = context.Line.Where(x => x.LineManager == lineManager).First();
+                if (line == null)
+                {
+                    return UnprocessableEntity();
+
+                }
+                if (line.Employees==null)
+                {
+                    line.Employees = new List<User>();
+                }
+                line.Employees.Append(user);
+                context.SaveChanges();
                 return Ok();
                 
             }
@@ -190,15 +203,16 @@ namespace skipper_backend.Controllers
         {
             try
             {
+                var users = context.Users.ToList();
                 var allUsers = new List<UserBasicInfoDto>();
-                foreach (var user in context.Users)
+                foreach (var user in users)
                 {
-                UserBasicInfoDto newUserInfo = new UserBasicInfoDto();
-                newUserInfo.User = user;
-                newUserInfo.Languages = context.EmployeeLanguage.Where(l => l.EmployeeId == user.Id).ToList();
-                newUserInfo.Line = context.Line.Where(l => l.Employees.Contains(user)).First();
-                newUserInfo.PositionAndLevel = context.EmployeePositionAndLevel.Where(p => p.EmployeeId == user.Id).ToList();
-                newUserInfo.Projects = context.EmployeeProject.Where(p => p.UserId == user.Id).ToList();
+                    UserBasicInfoDto newUserInfo = new UserBasicInfoDto();
+                    newUserInfo.User = user;
+                    newUserInfo.Languages = context.EmployeeLanguage.Where(l => l.EmployeeId == user.Id).ToList();
+                    newUserInfo.Line = context.Line.Where(l => l.Employees.Contains(user)).FirstOrDefault();
+                    newUserInfo.PositionAndLevel = context.EmployeePositionAndLevel.Where(p => p.EmployeeId == user.Id).ToList();
+                    newUserInfo.Projects = context.EmployeeProject.Where(p => p.UserId == user.Id).ToList();
                     allUsers.Add(newUserInfo);
                 }
                 return allUsers;
@@ -212,10 +226,10 @@ namespace skipper_backend.Controllers
 
 
         [Authorize]
-        [HttpGet("getbasicinfo")]
+        [HttpPost("getbasicinfo")]
         public async Task<ActionResult<Object>> GetBasicInfo(GetBasicInfoDto dto)
         {
-            var user = await manager.FindByNameAsync(dto.UserName);
+            var user = await userManager.FindByNameAsync(dto.UserName);
             if (user == null)
             {
                 return NotFound();
@@ -225,10 +239,10 @@ namespace skipper_backend.Controllers
                 UserBasicInfoDto newUserInfo = new UserBasicInfoDto();
                 newUserInfo.User = user;
                 newUserInfo.Languages = context.EmployeeLanguage.Where(l => l.EmployeeId == user.Id).ToList();
-                newUserInfo.Line = context.Line.Where(l => l.Employees.Contains(user)).First();
+                newUserInfo.Line = context.Line.Where(l => l.Employees.Contains(user)).FirstOrDefault();
                 newUserInfo.PositionAndLevel = context.EmployeePositionAndLevel.Where(p => p.EmployeeId == user.Id).ToList();
                 newUserInfo.Projects = context.EmployeeProject.Where(p => p.UserId==user.Id).ToList();
-                return Ok();
+                return newUserInfo;
             }
             catch (Exception)
             {
@@ -243,10 +257,20 @@ namespace skipper_backend.Controllers
         public async Task<ActionResult<Object>> GetAllLines()
         {
             var username = User.Identity.Name;
-            var user = await manager.FindByNameAsync(username);
+            var user = await userManager.FindByNameAsync(username);
             if (user == null)
             {
                 return NotFound();
+            }
+
+            try
+            {
+                return context.Line.ToList();
+            }
+            catch (Exception)
+            {
+                return UnprocessableEntity();
+
             }
 
             return context.Line.ToList();
@@ -258,8 +282,8 @@ namespace skipper_backend.Controllers
         public async Task<ActionResult<Object>> GetLineSubordinates()
         {
             var username = User.Identity.Name;
-            var user = await manager.FindByNameAsync(username);
-            var isManager = await manager.IsInRoleAsync(user, "Manager");
+            var user = await userManager.FindByNameAsync(username);
+            var isManager = await userManager.IsInRoleAsync(user, "Manager");
             if (user == null)
             {
                 return NotFound();
@@ -277,24 +301,19 @@ namespace skipper_backend.Controllers
         [HttpPost("addline")]
         public async Task<ActionResult<Object>> AddLine(AddLineDto dto)
         {
-            var username = User.Identity.Name;
-            var user = await manager.FindByNameAsync(username);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
             try
             {
                 var newLine = new Line()
                 {
                     Id = Guid.NewGuid(),
-                    LineManager = await manager.FindByIdAsync(dto.LineManagerId),
+                    LineManager = await userManager.FindByIdAsync(dto.LineManagerId),
                     LineManagerId = dto.LineManagerId
                 };
+                newLine.Employees = new List<User>();
                 foreach (var item in dto.Employees)
                 {
-                    newLine.Employees.Add(await manager.FindByIdAsync(item));
+                    var empl = await userManager.FindByIdAsync(item);
+                    newLine.Employees.Add(empl);
                 }
                 context.Line.Add(newLine);
                 context.SaveChanges();

@@ -53,7 +53,7 @@ namespace skipper_backend.Controllers
         public async Task<ActionResult<AuthenticatedResponse>> RegisterUser(RegisterDto dto)
         {
             var user = new User { UserName = dto.Email, Email = dto.Email };
-            if(context.Users.First(x=> x.UserName == dto.Email) != null)
+            if(context.Users.Where(x=> x.UserName == dto.Email).ToList().Count >0)
             {
                 return BadRequest();
             }

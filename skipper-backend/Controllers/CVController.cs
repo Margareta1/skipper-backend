@@ -2,11 +2,14 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using skipper_backend.DTO;
 using skipper_backend.Identity;
 using skipper_backend.Models.CV;
 using skipper_backend.Store;
 using System.Security.Claims;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace skipper_backend.Controllers
 {
@@ -27,20 +30,33 @@ namespace skipper_backend.Controllers
 
         [Authorize]
         [HttpGet("getall")]
-        public async Task<ActionResult<Object>> GetAllCVs()
+        public async Task<JsonResult> GetAllCVs()
         {
             var username = User.Identity.Name;
             var user = await userManager.FindByNameAsync(username);
             if (user == null)
             {
-                return NotFound();
+                return new JsonResult("bad request");
             }
+            List<GetCVWithItemsDto> dto = new List<GetCVWithItemsDto>();
+            var allCvs =  context.CV.Where(x => x.OwnerId == user.Id).Include(v=> v.CVItems).ToList();
+            foreach (var item in allCvs)
+            {
+                var newDto = new GetCVWithItemsDto();
+                newDto.CV = item;
+                newDto.Items = context.CVItem.Where(x => x.CVId == item.Id).ToList();
+                dto.Add(newDto);
+            }
+            var options = new JsonSerializerOptions
+            {
+                ReferenceHandler = ReferenceHandler.Preserve
+            };
 
-            return context.CV.Where(x => x.OwnerId == user.Id).Include(v=> v.CVItems).ToList();
+            return new JsonResult(dto, options);
         }
 
         [Authorize]
-        [HttpGet("deletecv")]
+        [HttpPost("deletecv")]
         public async Task<ActionResult<Object>> DeleteCV(DeleteCVDto dto)
         {
             var username = User.Identity.Name;
@@ -92,14 +108,13 @@ namespace skipper_backend.Controllers
                 };
                 context.CV.Add(newCV);
                 context.SaveChanges();
-                var addedCV = context.CV.Find(newCV);
                 var newCVItems = new List<CVItem>();
                 foreach (var item in dto.Items)
                 {
                     newCVItems.Add(new CVItem()
                     {
                         Id = Guid.NewGuid(),
-                        CVId = addedCV.Id,
+                        CVId = newCV.Id,
                         Title = item.Title,
                         Description = item.Description,
                         EducationExperienceOrCert = item.EducationExperienceOrCert,
@@ -107,6 +122,7 @@ namespace skipper_backend.Controllers
                         To = item.To
                     });
                 }
+                newCV.CVItems = newCVItems;
                 context.CVItem.AddRange(newCVItems);
                 context.SaveChanges();
                 return Ok();
