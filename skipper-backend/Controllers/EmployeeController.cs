@@ -291,7 +291,7 @@ namespace skipper_backend.Controllers
 
             try
             {
-                return context.Line.ToList();
+                return context.Line.Include(x=>x.Employees).Include(x=>x.LineManager).ToList();
             }
             catch (Exception)
             {

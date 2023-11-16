@@ -44,13 +44,34 @@ namespace skipper_backend.Controllers
         }
 
         [Authorize]
-        [HttpGet("getprojectemployees")]
+        [HttpPost("getprojectemployees")]
         public async Task<ActionResult<Object>> GetProjectEmployees(GetProjectEmployeesDto dto)
         {
 
             try
             {
                 return context.EmployeeProject.Where(x=> x.CompanyProjectId==Guid.Parse(dto.ProjectId)).ToList();
+            }
+            catch (Exception)
+            {
+
+                return new JsonResult("Unprocessable");
+            }
+        }
+        [Authorize]
+        [HttpPost("getprojecttags")]
+        public async Task<ActionResult<Object>> GetProjectTags(GetProjectEmployeesDto dto)
+        {
+
+            try
+            {
+                var projectTags =  context.ProjectTag.Where(x=> x.ProjectId==Guid.Parse(dto.ProjectId)).ToList();
+                var tags = new List<Tag>();
+                foreach (var item in projectTags)
+                {
+                    tags.Add(context.Tag.FirstOrDefault(x => x.Id == item.TagId));
+                }
+                return tags;
             }
             catch (Exception)
             {
@@ -131,20 +152,23 @@ namespace skipper_backend.Controllers
         public async Task<ActionResult<Object>> AddProjectTag(AddProjectTagDto dto)
         {
             var project = context.CompanyProject.First(x => x.Id == Guid.Parse(dto.ProjectId));
-            var tag = context.Tag.First(x => x.Id == Guid.Parse(dto.TagId));
-            if(tag==null || project == null)
+            if( project == null)
             {
                 return NotFound();
             }
 
             try
             {
+                var newTag = new Tag();
+                newTag.Id = Guid.NewGuid();
+                newTag.Title = dto.TagId;
+                context.Tag.Add(newTag);
                 var newProjectTag = new ProjectTag();
                 newProjectTag.Id = Guid.NewGuid();
                 newProjectTag.Project = project;
                 newProjectTag.ProjectId = project.Id;
-                newProjectTag.TagId = tag.Id;
-                newProjectTag.Tag = tag;
+                newProjectTag.TagId = newTag.Id;
+                newProjectTag.Tag = newTag;
                 context.ProjectTag.Add(newProjectTag);
                 context.SaveChanges();
                 return Ok();
