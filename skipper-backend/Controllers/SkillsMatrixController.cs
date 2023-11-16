@@ -9,7 +9,7 @@ using skipper_backend.Store;
 
 namespace skipper_backend.Controllers
 {
-    public class SkillsMatrixController : Controller
+    public class SkillsMatrixController : BaseApiController
     {
         private readonly UserManager<User> userManager;
         private readonly TokenService tokenService;

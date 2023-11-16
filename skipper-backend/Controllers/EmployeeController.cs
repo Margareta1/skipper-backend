@@ -209,9 +209,24 @@ namespace skipper_backend.Controllers
                 {
                     UserBasicInfoDto newUserInfo = new UserBasicInfoDto();
                     newUserInfo.User = user;
-                    newUserInfo.Languages = context.EmployeeLanguage.Where(l => l.EmployeeId == user.Id).ToList();
+                    newUserInfo.Languages = new List<string>();
+                 
+                 var languages =  context.EmployeeLanguage.Where(l => l.EmployeeId == user.Id).ToList();
+                    if (languages.Count>0)
+                    {
+                        foreach (var item in languages)
+                        {
+                            newUserInfo.Languages.Add(context.Language.First(x => x.Id == item.LanguageId).Name);
+                        }
+                    }
                     newUserInfo.Line = context.Line.Where(l => l.Employees.Contains(user)).FirstOrDefault();
-                    newUserInfo.PositionAndLevel = context.EmployeePositionAndLevel.Where(p => p.EmployeeId == user.Id).ToList();
+                    var positionAndLevel = context.EmployeePositionAndLevel.Where(p => p.EmployeeId == user.Id).FirstOrDefault();
+                    if (positionAndLevel != null)
+                    {
+                    newUserInfo.Level = context.LevelOfExperience.First(x => x.Id == positionAndLevel.LevelOfExperienceId).Title;
+                    newUserInfo.Position = context.Position.First(x=>x.Id==positionAndLevel.PositionId).Name;
+
+                    }
                     newUserInfo.Projects = context.EmployeeProject.Where(p => p.UserId == user.Id).ToList();
                     allUsers.Add(newUserInfo);
                 }
@@ -238,10 +253,21 @@ namespace skipper_backend.Controllers
             {
                 UserBasicInfoDto newUserInfo = new UserBasicInfoDto();
                 newUserInfo.User = user;
-                newUserInfo.Languages = context.EmployeeLanguage.Where(l => l.EmployeeId == user.Id).ToList();
+                newUserInfo.Languages = new List<string>();
+
+                var languages = context.EmployeeLanguage.Where(l => l.EmployeeId == user.Id).ToList();
+                if (languages != null)
+                {
+                    foreach (var item in languages)
+                    {
+                        newUserInfo.Languages.Add(context.Language.First(x => x.Id == item.LanguageId).Name);
+                    }
+                }
                 newUserInfo.Line = context.Line.Where(l => l.Employees.Contains(user)).FirstOrDefault();
-                newUserInfo.PositionAndLevel = context.EmployeePositionAndLevel.Where(p => p.EmployeeId == user.Id).ToList();
-                newUserInfo.Projects = context.EmployeeProject.Where(p => p.UserId==user.Id).ToList();
+                var positionAndLevel = context.EmployeePositionAndLevel.Where(p => p.EmployeeId == user.Id).First();
+                newUserInfo.Level = context.LevelOfExperience.First(x => x.Id == positionAndLevel.LevelOfExperienceId).Title;
+                newUserInfo.Position = context.Position.First(x => x.Id == positionAndLevel.PositionId).Name;
+                newUserInfo.Projects = context.EmployeeProject.Where(p => p.UserId == user.Id).ToList();
                 return newUserInfo;
             }
             catch (Exception)

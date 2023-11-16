@@ -10,7 +10,7 @@ using skipper_backend.Store;
 
 namespace skipper_backend.Controllers
 {
-    public class GeneralController : Controller
+    public class GeneralController : BaseApiController
     {
         private readonly UserManager<User> userManager;
         private readonly TokenService tokenService;

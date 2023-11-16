@@ -7,9 +7,12 @@ namespace skipper_backend.DTO
     public class UserBasicInfoDto
     {
         public User  User { get; set; }
-        public IList<EmployeeLanguage>   Languages { get; set; }
-        public IList<EmployeePositionAndLevel> PositionAndLevel { get; set; }
-        public Line Line { get; set; }
+        public List<string> Languages { get; set; }
+        public string Position { get; set; }
+        public string Level { get; set; }
+        public string UtilizationType { get; set; }
+        public string Utilization { get; set; }
         public IList<EmployeeProject> Projects { get; set; }
+        public Line Line { get; set; }
     }
 }

@@ -11,7 +11,7 @@ using skipper_backend.Store;
 
 namespace skipper_backend.Controllers
 {
-    public class SurveyController : Controller
+    public class SurveyController : BaseApiController
     {
         private readonly UserManager<User> userManager;
         private readonly TokenService tokenService;
@@ -60,7 +60,10 @@ namespace skipper_backend.Controllers
                 {
                     sur.Assignees = context.SurveyAssignee.Where(x => x.SurveyId == sur.Survey.Id).ToList();
                 }
-                return sur;
+                GetSurveyWithQuestionsDto newDto = new GetSurveyWithQuestionsDto();
+                newDto.Survey = sur;
+                newDto.Questions = context.TextArea.Where(x=> x.SurveyId==Guid.Parse(dto.SurveyId)).ToList();
+                return newDto;
 
             }
             catch (Exception)
@@ -76,12 +79,14 @@ namespace skipper_backend.Controllers
             try
             {
                 GetSurveysWithAssigneesDto dto = new GetSurveysWithAssigneesDto();
+                dto.SurveysWithAssignees = new List<SurveyWithAssigneesDto>();
                 var sur = context.Survey.Include(x => x.Inputs).ToList();
                 foreach (var item in sur)
                 {
                     SurveyWithAssigneesDto newSWA = new SurveyWithAssigneesDto();
                     newSWA.Survey = item;
                     newSWA.Assignees = context.SurveyAssignee.Where(x => x.SurveyId == item.Id).ToList();
+                    dto.SurveysWithAssignees.Add(newSWA);
                 }
 
                 return dto;
@@ -101,10 +106,15 @@ namespace skipper_backend.Controllers
             var user = await userManager.FindByNameAsync(username);
             try
             {
-                var allSurveys = context.SurveyAssignee.Where(x => x.ASssignee == user).ToList();
+                var allSurveys = context.SurveyAssignee.Where(x => x.AssigneeId == user.Id).ToList();
                 if (allSurveys != null)
                 {
-                    return context.Survey.Where(x => allSurveys.Exists(c => c.SurveyId == x.Id)).ToList();
+                    var surveys = new List<Survey>();
+                    foreach (var item in allSurveys)
+                    {
+                        surveys.Add(context.Survey.First(x => x.Id == item.SurveyId));
+                    }
+                    return surveys;
                 }
                 else
                 {
@@ -123,8 +133,8 @@ namespace skipper_backend.Controllers
         {
             var username = User.Identity.Name;
             var user = await userManager.FindByNameAsync(username);
-            var isManager = await userManager.IsInRoleAsync(user, "Manager");
-            if (user == null || !isManager)
+            //var isManager = await userManager.IsInRoleAsync(user, "Manager");
+            if (user == null)
             {
                 return BadRequest();
             }
@@ -152,6 +162,18 @@ namespace skipper_backend.Controllers
                         newAssignee.SurveyId = newSurvey.Id;
                         context.SurveyAssignee.Add(newAssignee);
                     }
+                }
+
+                foreach (var item in dto.Questions)
+                {
+                    var newQ = new TextArea();
+                    newQ.Id = Guid.NewGuid();
+                    newQ.OrderKey = item.OrderKey;
+                    newQ.Placeholder = item.Placeholder;
+                    newQ.Label = item.Label;
+                    newQ.Survey = newSurvey;
+                    newQ.SurveyId = newSurvey.Id;
+                    context.TextArea.Add(newQ);
                 }
 
                 context.SaveChanges();

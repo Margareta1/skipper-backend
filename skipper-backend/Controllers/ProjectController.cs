@@ -12,7 +12,7 @@ using System.Text.Json;
 
 namespace skipper_backend.Controllers
 {
-    public class ProjectController : Controller
+    public class ProjectController : BaseApiController
     {
         private readonly UserManager<User> userManager;
         private readonly TokenService tokenService;

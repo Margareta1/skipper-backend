@@ -13,7 +13,7 @@ using skipper_backend.Store;
 
 namespace skipper_backend.Controllers
 {
-    public class StaffingController : Controller
+    public class StaffingController : BaseApiController
     {
         private readonly UserManager<User> userManager;
         private readonly TokenService tokenService;
@@ -26,6 +26,8 @@ namespace skipper_backend.Controllers
             tokenService = service;
             context = storeContext;
         }
+
+
 
         [Authorize]
         [HttpPost("gethiringpostcomments")]
@@ -60,7 +62,7 @@ namespace skipper_backend.Controllers
 
             try
             {
-                return context.HiringPostApplication.Where(x => x.HiringPostId == Guid.Parse(dto.HiringPostId)).ToList();
+                return context.HiringPostApplication.Where(x => x.HiringPostId == Guid.Parse(dto.HiringPostId)).Include(x=>x.Applicant).ToList();
             }
             catch (Exception)
             {
@@ -109,7 +111,7 @@ namespace skipper_backend.Controllers
             var user = await userManager.FindByNameAsync(username);
             var hiringPost = context.HiringPost.Where(x => x.Id == Guid.Parse(dto.HiringPostId)).First();
 
-            if (user == null || hiringPost != null)
+            if (user == null || hiringPost == null)
             {
                 return NotFound();
             }
@@ -137,6 +139,41 @@ namespace skipper_backend.Controllers
 
         }
 
+        [Authorize]
+        [HttpPost("addhiringpostcomment")]
+        public async Task<ActionResult<Object>> AddHiringPostComment(AddHiringPostCommentDto dto)
+        {
+            var username = User.Identity.Name;
+            var user = await userManager.FindByNameAsync(username);
+            var hiringPost = context.HiringPost.Where(x => x.Id == Guid.Parse(dto.HiringPostId)).First();
+
+            if (user == null || hiringPost == null)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                var newHiringPostComment = new HiringPostComment();
+                newHiringPostComment.Id = Guid.NewGuid();
+                newHiringPostComment.PostedAt = DateTime.Now;
+                newHiringPostComment.Comment = dto.Comment;
+                newHiringPostComment.Commentor = user;
+                newHiringPostComment.CommentorId = user.Id;
+                newHiringPostComment.HiringPost = hiringPost;
+                newHiringPostComment.HiringPostId = hiringPost.Id;
+                context.HiringPostComment.Add(newHiringPostComment);
+                context.SaveChanges();
+                return Ok();
+
+            }
+            catch (Exception)
+            {
+                return UnprocessableEntity();
+            }
+
+        }
+
 
         [Authorize]
         [HttpPost("addhiringpost")]
@@ -147,7 +184,7 @@ namespace skipper_backend.Controllers
             var utilizationType = context.UtilizationType.Where(x => x.Id == Guid.Parse(dto.UtilizationTypeId)).First();
             var project = context.CompanyProject.Where(x => x.Id == Guid.Parse(dto.CompanyProjectId)).First();
             var level = context.LevelOfExperience.Where(x => x.Id == Guid.Parse(dto.EmployeeLevelOfExperienceId)).First();
-            if (user == null || utilizationType!=null || project!=null || level!=null)
+            if (user == null || utilizationType==null || project==null || level==null)
             {
                 return NotFound();
             }
@@ -252,7 +289,7 @@ namespace skipper_backend.Controllers
         [HttpPost("gethiringposts")]
         public async Task<ActionResult<Object>> GetHiringPosts(GetHiringPostsDto dto)
         {
-            var project = context.HiringPost.Where(x => x.Id == Guid.Parse(dto.ProjectId)).First();
+            var project = context.CompanyProject.Where(x => x.Id == Guid.Parse(dto.ProjectId)).First();
             if (project == null)
             {
                 return NotFound();

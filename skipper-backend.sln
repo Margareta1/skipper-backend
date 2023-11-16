@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34031.279
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "skipper-backend", "skipper-backend\skipper-backend.csproj", "{C8B3595C-0C3C-483B-BAD7-C163B1A4EBF6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "skipper-backend", "skipper-backend\skipper-backend.csproj", "{C8B3595C-0C3C-483B-BAD7-C163B1A4EBF6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "skipper-backend-tests", "skipper-backend-tests\skipper-backend-tests.csproj", "{1B5565AA-DEB0-4F52-A8A0-823CF07DB1C6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{C8B3595C-0C3C-483B-BAD7-C163B1A4EBF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C8B3595C-0C3C-483B-BAD7-C163B1A4EBF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C8B3595C-0C3C-483B-BAD7-C163B1A4EBF6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B5565AA-DEB0-4F52-A8A0-823CF07DB1C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B5565AA-DEB0-4F52-A8A0-823CF07DB1C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B5565AA-DEB0-4F52-A8A0-823CF07DB1C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B5565AA-DEB0-4F52-A8A0-823CF07DB1C6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
