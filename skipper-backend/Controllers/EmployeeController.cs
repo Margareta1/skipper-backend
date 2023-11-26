@@ -129,7 +129,7 @@ namespace skipper_backend.Controllers
         
         [Authorize]
         [HttpPost("addemployeelanguage")]
-        public async Task<ActionResult<Object>> AddEmployeeToLine(AddEmployeeLanguageDto dto)
+        public async Task<ActionResult<Object>> AddEmployeeLanguage(AddEmployeeLanguageDto dto)
         {
             var user = await userManager.FindByNameAsync(dto.EmployeeUsername);
             var language = context.Language.Where(x => x.Id == dto.LanguageId).First();
@@ -164,7 +164,7 @@ namespace skipper_backend.Controllers
         [HttpPost("addemployeetoline")]
         public async Task<ActionResult<Object>> AddEmployeeToLine(AddEmployeeToLineDto dto)
         {
-            var user = await userManager.FindByNameAsync(dto.EmployeeUsername);
+            var user = await userManager.FindByEmailAsync(dto.EmployeeUsername);
             var lineManager = await userManager.FindByEmailAsync(dto.ManagerUsername);
             if (user == null || lineManager ==null)
             {
@@ -173,7 +173,7 @@ namespace skipper_backend.Controllers
 
             try
             {
-                var line = context.Line.Where(x => x.LineManager == lineManager).First();
+                var line = context.Line.Include(x=>x.Employees).Where(x => x.LineManager == lineManager).First();
                 if (line == null)
                 {
                     return UnprocessableEntity();
@@ -183,7 +183,7 @@ namespace skipper_backend.Controllers
                 {
                     line.Employees = new List<User>();
                 }
-                line.Employees.Append(user);
+                line.Employees.Add(user);
                 context.SaveChanges();
                 return Ok();
                 
@@ -292,6 +292,7 @@ namespace skipper_backend.Controllers
             try
             {
                 return context.Line.Include(x=>x.Employees).Include(x=>x.LineManager).ToList();
+
             }
             catch (Exception)
             {
@@ -338,7 +339,7 @@ namespace skipper_backend.Controllers
                 newLine.Employees = new List<User>();
                 foreach (var item in dto.Employees)
                 {
-                    var empl = await userManager.FindByIdAsync(item);
+                    var empl = await userManager.FindByEmailAsync(item);
                     newLine.Employees.Add(empl);
                 }
                 context.Line.Add(newLine);
