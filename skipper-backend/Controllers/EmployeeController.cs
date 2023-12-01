@@ -9,6 +9,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using skipper_backend.Models.Employee;
 using System.Runtime.ExceptionServices;
+using System.Net.WebSockets;
 
 namespace skipper_backend.Controllers
 {
@@ -34,9 +35,8 @@ namespace skipper_backend.Controllers
         {
             var user = await userManager.FindByNameAsync(dto.EmployeeUsername);
             var project = context.CompanyProject.Where(x => x.Id == dto.CompanyProjectId).First();
-            var utilizationType = context.UtilizationType.Where(x => x.Id == dto.UtilizationTypeId).First();
 
-            if (user == null || project ==null || utilizationType==null)
+            if (user == null || project ==null)
             {
                 return NotFound();
             }
@@ -50,8 +50,8 @@ namespace skipper_backend.Controllers
                 newEmployeeProject.CompanyProject = project;
                 newEmployeeProject.CompanyProjectId = project.Id;
                 newEmployeeProject.Utilization = dto.Utilization;
-                newEmployeeProject.UtilizationTypeId = utilizationType.Id;
-                newEmployeeProject.UtilizationType = utilizationType;
+                newEmployeeProject.UtilizationTypeId = Guid.Parse("331ec109-33e0-4c1f-99f4-0680211cec89");
+                newEmployeeProject.UtilizationType = context.UtilizationType.FirstOrDefault(x => x.Id == Guid.Parse("331ec109-33e0-4c1f-99f4-0680211cec89"));
                 context.EmployeeProject.Add(newEmployeeProject);
                 context.SaveChanges();
                 return Ok();
@@ -239,6 +239,59 @@ namespace skipper_backend.Controllers
             }
         }
 
+        [Authorize]
+        [HttpGet("getemployeeoverview")]
+        public async Task<ActionResult<List<GetEmployeeOverviewDto>>> GetEmployeeOverview()
+        {
+            try
+            {
+                var allUsers = context.Users.ToList();
+                var dto = new List<GetEmployeeOverviewDto>();
+                foreach (var item in allUsers)
+                {
+                    var newUser = new GetEmployeeOverviewDto();
+                    newUser.Key = item.Id;
+                    newUser.Name = item.UserName;
+                    var proj = context.EmployeeProject.Where(x => x.UserId == item.Id).Include(x=>x.CompanyProject).ToList();
+                    string s = "";
+                    double util = 0.0;
+                    foreach (var project in proj)
+                    {
+                        s += project.CompanyProject.Name;
+                        s += "  ";
+                        util += project.Utilization;
+                    }
+                    newUser.Projects = s;
+                    newUser.UtilizationAmount = util;
+                    newUser.UtilizationType = util == 100 ? "Full-time" : util==0 ? "Benched" : "Part-time";
+                    var skills = context.EmployeeSkill.Where(x => x.EmployeeId == item.Id).Include(x=>x.GeneralSkill).ToList();
+                    var skill = "";
+                    foreach (var sk in skills)
+                    {
+                        skill += sk.GeneralSkill.Name;
+                        skill += "  ";
+                    }
+                    newUser.Skills = skill;
+                    var languages = context.EmployeeLanguage.Where(x => x.EmployeeId == item.Id).Include(x=>x.Language).ToList();
+                    var lang = "";
+                    foreach (var la in languages)
+                    {
+                        lang += la.Language.Name;
+                        lang += "  ";
+                    }
+                    newUser.Languages = lang;
+                    dto.Add(newUser);
+                }
+
+
+                return dto;
+            }
+            catch (Exception)
+            {
+                return StatusCode(404);
+            }
+        }
+
 
         [Authorize]
         [HttpPost("getbasicinfo")]
@@ -354,6 +407,24 @@ namespace skipper_backend.Controllers
 
         }
 
-        
+        [Authorize]
+        [HttpGet("getpersonalinfo")]
+        public async Task<ActionResult<Object>> GetPersonalInfo()
+        {
+            try
+            {
+                var username = User.Identity.Name;
+                var user = await userManager.FindByNameAsync(username);
+                return user;
+            }
+            catch (Exception)
+            {
+                return UnprocessableEntity();
+            }
+
+
+        }
+
+
     }
 }

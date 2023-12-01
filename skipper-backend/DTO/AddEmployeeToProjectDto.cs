@@ -10,7 +10,6 @@ namespace skipper_backend.DTO
     {
         public Guid CompanyProjectId { get; set; }
         public string EmployeeUsername { get; set; }
-        public Guid UtilizationTypeId { get; set; }
         public double Utilization { get; set; }
     }
 }

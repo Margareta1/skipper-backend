@@ -51,10 +51,10 @@ namespace skipper_backend.Controllers
         }
 
         [Authorize]
-        [HttpPost("gethiringpostapplications")]
-        public async Task<ActionResult<Object>> GetHiringPostApplications(GetHiringPostApplicationsOrCommentDto dto)
+        [HttpGet("gethiringpostapplications/{id}")]
+        public async Task<ActionResult<Object>> GetHiringPostApplications([FromRoute] string id)
         {
-            var hiringPost = context.HiringPost.Where(x => x.Id == Guid.Parse(dto.HiringPostId)).First();
+            var hiringPost = context.HiringPost.Where(x => x.Id == Guid.Parse(id)).First();
             if (hiringPost == null)
             {
                 return NotFound();
@@ -62,7 +62,7 @@ namespace skipper_backend.Controllers
 
             try
             {
-                return context.HiringPostApplication.Where(x => x.HiringPostId == Guid.Parse(dto.HiringPostId)).Include(x=>x.Applicant).ToList();
+                return context.HiringPostApplication.Where(x => x.HiringPostId == Guid.Parse(id)).Include(x=>x.Applicant).ToList();
             }
             catch (Exception)
             {
@@ -181,10 +181,9 @@ namespace skipper_backend.Controllers
         {
             var username = User.Identity.Name;
             var user = await userManager.FindByNameAsync(username);
-            var utilizationType = context.UtilizationType.Where(x => x.Id == Guid.Parse(dto.UtilizationTypeId)).First();
             var project = context.CompanyProject.Where(x => x.Id == Guid.Parse(dto.CompanyProjectId)).First();
             var level = context.LevelOfExperience.Where(x => x.Id == Guid.Parse(dto.EmployeeLevelOfExperienceId)).First();
-            if (user == null || utilizationType==null || project==null || level==null)
+            if (user == null || project==null || level==null)
             {
                 return NotFound();
             }
@@ -197,8 +196,8 @@ namespace skipper_backend.Controllers
                 newHiringPost.CreatorId = user.Id;
                 newHiringPost.CreatedAt = DateTime.Now;
                 newHiringPost.Position = dto.Position;
-                newHiringPost.UtilizationTypeId = Guid.Parse(dto.UtilizationTypeId);
-                newHiringPost.UtilizationType = utilizationType;
+                newHiringPost.UtilizationTypeId = context.UtilizationType.Where(x => x.Name == "Percentage").FirstOrDefault().Id;
+                newHiringPost.UtilizationType = context.UtilizationType.Where(x => x.Name=="Percentage").FirstOrDefault();
                 newHiringPost.CompanyProject = project;
                 newHiringPost.CompanyProjectId = project.Id;
                 newHiringPost.UtilizationAmount = dto.UtilizationAmount;
@@ -286,10 +285,10 @@ namespace skipper_backend.Controllers
         }
         
         [Authorize]
-        [HttpPost("gethiringposts")]
-        public async Task<ActionResult<Object>> GetHiringPosts(GetHiringPostsDto dto)
+        [HttpGet("gethiringposts/{id}")]
+        public async Task<ActionResult<Object>> GetHiringPosts([FromRoute] string id)
         {
-            var project = context.CompanyProject.Where(x => x.Id == Guid.Parse(dto.ProjectId)).First();
+            var project = context.CompanyProject.Where(x => x.Id == Guid.Parse(id)).First();
             if (project == null)
             {
                 return NotFound();
@@ -297,7 +296,7 @@ namespace skipper_backend.Controllers
 
             try
             {
-                return context.HiringPost.Where(x => x.CompanyProjectId == project.Id).Include(x=> x.RequiredLanguages).Include(x=> x.GeneralSkills).ToList();
+                return context.HiringPost.Where(x => x.CompanyProjectId == project.Id).Include(x=> x.RequiredLanguages).Include(x=> x.GeneralSkills).Include(x=>x.EmployeeLevelOfExperience).ToList();
             }
             catch (Exception)
             {

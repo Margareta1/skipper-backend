@@ -43,14 +43,99 @@ namespace skipper_backend.Controllers
             }
         }
 
+
+
+
         [Authorize]
-        [HttpPost("getprojectemployees")]
-        public async Task<ActionResult<Object>> GetProjectEmployees(GetProjectEmployeesDto dto)
+        [HttpGet("getprojectoverview")]
+        public async Task<ActionResult<List<GetProjectOverviewDto>>> GetProjectOverview()
         {
 
             try
             {
-                return context.EmployeeProject.Where(x=> x.CompanyProjectId==Guid.Parse(dto.ProjectId)).ToList();
+                var newList = new List<GetProjectOverviewDto>();
+                var allProjects = context.CompanyProject.ToList();
+                foreach (var item in allProjects)
+                {
+                    var newOverview = new GetProjectOverviewDto();
+                    newOverview.Key = item.Id.ToString();
+                    newOverview.Active = item.Active ? "True" : "False";
+                    newOverview.Name = item.Name;
+                    newOverview.Description = item.Description;
+                    var allHPs = context.HiringPost.Where(x => x.CompanyProjectId == item.Id && x.ExpiresAt > DateTime.Now).ToList();
+                    newOverview.Hiring = allHPs.Count > 0 ? "True" : "False";
+                    var allTags = context.ProjectTag.Where(x => x.ProjectId == item.Id).ToList();
+                    string t = "";
+                    foreach (var tag in allTags)
+                    {
+                        tag.Tag = context.Tag.Where(x => x.Id == tag.TagId).FirstOrDefault();
+                        t += tag.Tag.Title;
+                        t += "  ";
+                    }
+                    newOverview.Tags = t.TrimEnd();
+                    newList.Add(newOverview);
+                }
+                return newList;
+            }
+            catch (Exception)
+            {
+
+                return new JsonResult("Unprocessable");
+            }
+        }        
+        
+        [Authorize]
+        [HttpGet("getproject/{id}")]
+        public async Task<ActionResult<Object>> GetProjectById([FromRoute]string id)
+        {
+
+            try
+            {
+                return context.CompanyProject.FirstOrDefault(x => x.Id == Guid.Parse(id));
+            }
+            catch (Exception)
+            {
+
+                return new JsonResult("Unprocessable");
+            }
+        }
+
+        [Authorize]
+        [HttpGet("getprojectlead/{id}")]
+        public async Task<ActionResult<Object>> GetProjectLeadById([FromRoute]string id)
+        {
+
+            try
+            {
+                var lead = context.ProjectLead.FirstOrDefault(x => x.ProjectId == Guid.Parse(id));
+                lead.Lead = context.Users.FirstOrDefault(x => x.Id == lead.LeadId);
+                return lead;
+            }
+            catch (Exception)
+            {
+
+                return new JsonResult("Unprocessable");
+            }
+        }
+
+
+
+
+
+
+        [Authorize]
+        [HttpGet("getprojectemployees/{id}")]
+        public async Task<ActionResult<Object>> GetProjectEmployees([FromRoute] string id)
+        {
+
+            try
+            {
+               var allProj = context.EmployeeProject.Where(x=> x.CompanyProjectId==Guid.Parse(id)).ToList();
+                foreach (var item in allProj)
+                {
+                    item.User = context.Users.FirstOrDefault(x => x.Id == item.UserId);
+                }
+                return allProj;
             }
             catch (Exception)
             {
@@ -59,13 +144,13 @@ namespace skipper_backend.Controllers
             }
         }
         [Authorize]
-        [HttpPost("getprojecttags")]
-        public async Task<ActionResult<Object>> GetProjectTags(GetProjectEmployeesDto dto)
+        [HttpGet("getprojecttags/{id}")]
+        public async Task<ActionResult<Object>> GetProjectTags([FromRoute] string id)
         {
 
             try
             {
-                var projectTags =  context.ProjectTag.Where(x=> x.ProjectId==Guid.Parse(dto.ProjectId)).ToList();
+                var projectTags =  context.ProjectTag.Where(x=> x.ProjectId==Guid.Parse(id)).ToList();
                 var tags = new List<Tag>();
                 foreach (var item in projectTags)
                 {
@@ -81,13 +166,18 @@ namespace skipper_backend.Controllers
         }
 
         [Authorize]
-        [HttpGet("getprojectcomments")]
-        public async Task<ActionResult<Object>> GetProjectComments(GetProjectEmployeesDto dto)
+        [HttpGet("getprojectcomments/{id}")]
+        public async Task<ActionResult<Object>> GetProjectComments([FromRoute] string id)
         {
 
             try
             {
-                return context.ProjectComment.Where(x=> x.ProjectId==Guid.Parse(dto.ProjectId)).ToList();
+                var allComm = context.ProjectComment.Where(x=> x.ProjectId==Guid.Parse(id)).ToList();
+                foreach (var item in allComm)
+                {
+                    item.Commentor = context.Users.FirstOrDefault(x => x.Id == item.CommentorId);
+                }
+                return allComm;
             }
             catch (Exception)
             {
@@ -152,23 +242,21 @@ namespace skipper_backend.Controllers
         public async Task<ActionResult<Object>> AddProjectTag(AddProjectTagDto dto)
         {
             var project = context.CompanyProject.First(x => x.Id == Guid.Parse(dto.ProjectId));
-            if( project == null)
+            var tag = context.Tag.First(x => x.Id == Guid.Parse(dto.TagId));
+            if( project == null || tag==null)
             {
                 return NotFound();
             }
 
             try
             {
-                var newTag = new Tag();
-                newTag.Id = Guid.NewGuid();
-                newTag.Title = dto.TagId;
-                context.Tag.Add(newTag);
+                
                 var newProjectTag = new ProjectTag();
                 newProjectTag.Id = Guid.NewGuid();
                 newProjectTag.Project = project;
                 newProjectTag.ProjectId = project.Id;
-                newProjectTag.TagId = newTag.Id;
-                newProjectTag.Tag = newTag;
+                newProjectTag.TagId = tag.Id;
+                newProjectTag.Tag = tag;
                 context.ProjectTag.Add(newProjectTag);
                 context.SaveChanges();
                 return Ok();
