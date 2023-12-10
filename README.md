@@ -1,0 +1,1 @@
+Skipper is an application written (and still in progress) for my finishing thesis as a Bachelor in Computer Engineering. It is meant to be an internal corporative application that tracks employee progress and staffs projects.
