@@ -88,5 +88,7 @@ namespace skipper_backend.Store
         public DbSet<SurveyInput> SurveyInput { get; set; }
         public DbSet<ProjectLead> ProjectLead { get; set; }
         public DbSet<EmployeeProject> EmployeeProject { get; set; }
+        public DbSet<SurveyAnswer> SurveyAnswer { get; set; }
     }
+    
 }

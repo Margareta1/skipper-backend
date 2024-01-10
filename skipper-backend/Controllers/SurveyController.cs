@@ -26,20 +26,23 @@ namespace skipper_backend.Controllers
         }
 
         [Authorize]
-        [HttpGet("getsurveystatistics")]
-        public async Task<ActionResult<Object>> GetSurveyStatistics(GetSurveyDto dto)
+        [HttpGet("getsurveystatistics/{id}")]
+        public async Task<ActionResult<Object>> GetSurveyStatistics([FromRoute] string id)
         {
 
             var username = User.Identity.Name;
             var user = await userManager.FindByNameAsync(username);
-            var sur= context.Survey.Include(x => x.Inputs).First(x => x.Id == Guid.Parse(dto.SurveyId));
-            if (sur.CreatorId!=user.Id)
+            GetSurveyStatisticsDto dto = new GetSurveyStatisticsDto();
+            dto.Survey = context.Survey.Include(x=>x.Inputs).First(x => x.Id == Guid.Parse(id));
+            dto.Questions = context.TextArea.Where(x=>x.SurveyId==dto.Survey.Id).ToList();
+            dto.Inputs = context.SurveyInput.Include(x=>x.Answers).Where(x=>dto.Survey.Inputs.Contains(x)).ToList();
+            if (dto.Survey.CreatorId != user.Id)
             {
                 return Unauthorized();
             }
             try
             {
-                return sur.Inputs;
+                return dto;
 
             }
             catch (Exception)
@@ -49,20 +52,20 @@ namespace skipper_backend.Controllers
         }
 
         [Authorize]
-        [HttpGet("getsurvey")]
-        public async Task<ActionResult<Object>> GetSurvey(GetSurveyDto dto)
+        [HttpGet("getsurvey/{id}")]
+        public async Task<ActionResult<Object>> GetSurvey([FromRoute] string id)
         {
             try
             {
                 SurveyWithAssigneesDto sur = new SurveyWithAssigneesDto();
-                sur.Survey = context.Survey.Include(x=>x.Inputs).First(x => x.Id == Guid.Parse(dto.SurveyId));
+                sur.Survey = context.Survey.Include(x => x.Inputs).First(x => x.Id == Guid.Parse(id));
                 if (sur.Survey != null)
                 {
                     sur.Assignees = context.SurveyAssignee.Where(x => x.SurveyId == sur.Survey.Id).ToList();
                 }
                 GetSurveyWithQuestionsDto newDto = new GetSurveyWithQuestionsDto();
                 newDto.Survey = sur;
-                newDto.Questions = context.TextArea.Where(x=> x.SurveyId==Guid.Parse(dto.SurveyId)).ToList();
+                newDto.Questions = context.TextArea.Where(x => x.SurveyId == Guid.Parse(id)).ToList();
                 return newDto;
 
             }
@@ -70,8 +73,8 @@ namespace skipper_backend.Controllers
             {
                 return BadRequest();
             }
-        }        
-        
+        }
+
         [Authorize]
         [HttpGet("getallsurveys")]
         public async Task<ActionResult<Object>> GetAllSurveys()
@@ -192,9 +195,9 @@ namespace skipper_backend.Controllers
         {
             var username = User.Identity.Name;
             var user = await userManager.FindByNameAsync(username);
-            var survey = context.Survey.Where(x => x.Id == dto.SurveyId).First();
-            var isAssigned = context.SurveyAssignee.First(y=> y.AssigneeId==user.Id && y.SurveyId==dto.SurveyId);
-            if (user == null || survey == null || isAssigned==null)
+            var survey = context.Survey.Where(x => x.Id == dto.SurveyId).Include(x=>x.Inputs).First();
+            var isAssigned = context.SurveyAssignee.First(y => y.AssigneeId == user.Id && y.SurveyId == dto.SurveyId);
+            if (user == null || survey == null || isAssigned == null)
             {
                 return BadRequest();
             }
@@ -205,6 +208,7 @@ namespace skipper_backend.Controllers
                 newSurveyInput.Id = Guid.NewGuid();
                 newSurveyInput.RespondentId = user.Id;
                 newSurveyInput.Respondent = user;
+                newSurveyInput.Answers = new List<SurveyAnswer>();
                 foreach (var item in dto.TextInputAnswer)
                 {
                     var newInput = new SurveyAnswer();
@@ -212,7 +216,9 @@ namespace skipper_backend.Controllers
                     newInput.OrderKey = item.OrderKey;
                     newInput.Id = Guid.NewGuid();
                     newSurveyInput.Answers.Add(newInput);
+
                 }
+                
                 survey.Inputs.Add(newSurveyInput);
                 context.SurveyInput.Add(newSurveyInput);
                 context.SaveChanges();
@@ -250,12 +256,12 @@ namespace skipper_backend.Controllers
             }
         }
 
-        [HttpPost("didsolvesurvey")]
-        public async Task<ActionResult<Object>> DidSolveSurvey(DeleteSurveyDto dto)
+        [HttpGet("didsolvesurvey/{id}")]
+        public async Task<ActionResult<Object>> DidSolveSurvey([FromRoute] string id)
         {
             var username = User.Identity.Name;
             var user = await userManager.FindByNameAsync(username);
-            var survey = context.Survey.Where(x => x.Id == Guid.Parse(dto.SurveyId)).Include(x=> x.Inputs).First();
+            var survey = context.Survey.Where(x => x.Id == Guid.Parse(id)).Include(x=> x.Inputs).First();
             var isAssigned = context.SurveyAssignee.First(x => x.AssigneeId == user.Id && x.SurveyId == survey.Id);
             if (user == null || survey == null || isAssigned==null)
             {
@@ -265,7 +271,7 @@ namespace skipper_backend.Controllers
             try
             {
                 var didSolve = survey.Inputs.Exists(x => x.RespondentId == user.Id);
-                return Ok(didSolve);
+                return didSolve;
 
             }
             catch (Exception)

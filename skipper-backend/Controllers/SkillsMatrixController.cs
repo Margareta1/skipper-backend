@@ -1,11 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using skipper_backend.DTO;
 using skipper_backend.Identity;
 using skipper_backend.Models.Project;
 using skipper_backend.Models.SkillsMatrix;
 using skipper_backend.Store;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 
 namespace skipper_backend.Controllers
 {
@@ -87,7 +90,7 @@ namespace skipper_backend.Controllers
         {
             var username = User.Identity.Name;
             var user = await userManager.FindByNameAsync(username);
-            var sm = context.SkillsMatrix.Where(x=> x.Id==Guid.Parse(dto.SkillsMatrixId)).First();
+            var sm = context.SkillsMatrix.Include(x=>x.Inputs).Where(x=> x.Id==Guid.Parse(dto.SkillsMatrixId)).First();
 
             if (user == null || sm==null)
             {
@@ -96,25 +99,29 @@ namespace skipper_backend.Controllers
 
             try
             {
-                var newInput = new SkillsMatrixInput();
-                newInput.Id = Guid.NewGuid();
-                newInput.CreatedAt = DateTime.Now;
-                newInput.Assignee = user;
-                newInput.AssigneeId = user.Id;
-                newInput.Inputs = new List<SkillsMatrixSingleSkillInput>();
 
-                foreach (var item in dto.Inputs)
+                var newInput = new SkillsMatrixInput
                 {
+                    // Other properties...
+                    Id = Guid.NewGuid(),
+                    CreatedAt = DateTime.Now,
+                    Assignee = user,
+                    AssigneeId = user.Id
 
-                    newInput.Inputs.Add(new SkillsMatrixSingleSkillInput
-                    {
-                        Id = Guid.NewGuid(),
-                        Input = item.Input,
-                        OrderKey = item.OrderKey
-                    });
-                }
-                sm.Inputs.Add(newInput);
-                context.SkillsMatrix.Update(sm);
+            };
+                newInput.Inputs = dto.Inputs.Select(item => new SkillsMatrixSingleSkillInput
+                {
+                    Id = Guid.NewGuid(),
+                    Input = item.Input,
+                    OrderKey = item.OrderKey,
+                    SkillsMatrixInput = newInput,
+                    SkillsMatrixInputID = newInput.Id
+
+                }).ToList();
+
+
+               sm.Inputs.Add(newInput);
+                context.SkillsMatrixInput.Add(newInput);
                 context.SaveChanges();
                 return Ok();
 
@@ -204,7 +211,9 @@ namespace skipper_backend.Controllers
             var user = await userManager.FindByNameAsync(username);
             try
             {
-                return context.SkillsMatrix.Where(x => x.Assignees.Contains(user)).ToList();
+                var all = context.SkillsMatrix.Include(x=>x.Skills).Include(x=>x.Inputs).Include(x=>x.Assignees).ToList();
+                var allM = context.SkillsMatrix.Include(x=>x.Assignees).Where(x => x.Assignees.Any(x=>x.UserName==username)).ToList();
+                return allM;
             }
             catch (Exception)
             {
@@ -212,6 +221,57 @@ namespace skipper_backend.Controllers
                 return new JsonResult("Unprocessable");
             }
         }
+
+        [Authorize]
+        [HttpGet("getskillsmatrix/{id}")]
+        public async Task<ActionResult<Object>> GetSkillsMatrix([FromRoute] string id)
+        {
+            var username = User.Identity.Name;
+            var user = await userManager.FindByNameAsync(username);
+            var skillsm = context.SkillsMatrix.First(x => x.Id == Guid.Parse(id));
+            
+            if(skillsm == null)
+            {
+                return Unauthorized();
+            }
+            try
+            {
+                return context.SkillsMatrix
+    .Include(s => s.Skills)
+    .Include(s=>s.Inputs)
+    .FirstOrDefault(s => s.Id == Guid.Parse(id));
+
+
+            }
+            catch (Exception e)
+            {
+                return new JsonResult("Unprocessable");
+            }
+        }
+
+        [Authorize]
+        [HttpGet("getskillsmatrixinput/{matrixid}")]
+        public async Task<ActionResult<Object>> GetSkillsMatrixInput([FromRoute] string matrixid)
+        {
+            try
+            {
+                var x= context.SkillsMatrixInput.Include(x=>x.Assignee).Include(x=>x.Inputs).ToList();
+
+                var options = new JsonSerializerOptions
+                {
+                    ReferenceHandler = ReferenceHandler.Preserve
+                };
+
+                var jsonString = JsonSerializer.Serialize(x, options);
+                return jsonString;
+            }
+            catch (Exception)
+            {
+                return new JsonResult("Unprocessable");
+            }
+        }
+
+        
 
     }
 }
