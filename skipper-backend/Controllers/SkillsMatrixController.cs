@@ -191,7 +191,8 @@ namespace skipper_backend.Controllers
 
             try
             {
-                return context.SkillsMatrix.ToList();
+                var all= context.SkillsMatrix.Include(x=>x.Assignees).Include(x=>x.Skills).Include(x=>x.Inputs).ToList();
+                return all;
             }
             catch (Exception)
             {
